@@ -1,0 +1,89 @@
+{% extends 'djassa/djassaman/base.html' %}
+{% block tire %}{% endblock tire %}
+
+{% block content %}
+<main class="container">
+    <!-- Profil Header -->
+    <div class="container profile-header mt-4">
+        <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}https://via.placeholder.com/120{% endif %}" alt="Profile Image" class="profile-img">
+        <div class="profile-info">
+            <h2>{{ user.get_full_name }}</h2>
+            <p>@{{ user.username }}</p>
+        </div>
+        <div class="profile-stats">
+            <a href="{% url 'abonnes' user.id %}" class="btn btn-outline-primary">{{ user.followers_count }} Followers</a>
+            <a href="{% url 'abonnements' user.id %}" class="btn btn-outline-primary">{{ user.following_count }} Suivie</a>
+            <a href="{% url 'amis' user.id %}" class="btn btn-outline-primary">{{ user.friends_count }} Amis</a>
+        </div>
+        <div class="profile-actions">
+            <a href="{% url 'inbox'  %}" class="btn btn-primary"><i class="fas fa-comment-dots"></i> Message</a>
+        </div>
+    </div>
+
+    <!-- Publications de l'utilisateur -->
+    <div class="container mt-4">
+        <h3>Mes Publications</h3>
+        <div class="row tiktok-grid">
+            {% for publication in user_publications %}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="card post-card">
+                        <div class="card-body p-0">
+                            {% if publication.image %}
+                                <!-- Image avec taille fixe -->
+                                <img src="{{ publication.image.url }}" class="img-fluid tiktok-post-image" alt="Image de la publication" style="object-fit: cover; height: 250px; width: 100%;">
+                            {% endif %}
+                            {% if publication.video %}
+                                <video class="tiktok-video" controls>
+                                    <source src="{{ publication.video.url }}" type="video/mp4">
+                                    Votre navigateur ne supporte pas la vidéo.
+                                </video>
+                            {% endif %}
+
+                            <!-- Ajouter le nombre de likes et de commentaires sous l'image -->
+                            <div class="post-actions mt-2 d-flex">
+                                <p><i class="fas fa-thumbs-up"></i> {{ publication.likes.count }} </p>
+                                <button class="btn btn-link" data-toggle="modal" data-target="#commentModal-{{ publication.id }}">
+                                    <i class="fas fa-comment"></i> {{ publication.comments.count }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal pour afficher les commentaires -->
+                <div class="modal fade" id="commentModal-{{ publication.id }}" tabindex="-1" role="dialog" aria-labelledby="commentModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="commentModalLabel">Commentaires</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <!-- Afficher les commentaires ici -->
+                                {% with publication.comments.all as pub_comments %}
+                                    {% if pub_comments %}
+                                        <ul>
+                                            {% for comment in pub_comments %}
+                                                <li><strong>{{ comment.user.username }}</strong>: {{ comment.content }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <p>Aucun commentaire pour cette publication.</p>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p>Aucune publication pour le moment.</p>
+            {% endfor %}
+        </div>
+    </div>
+</main>
+{% endblock content %}

@@ -1,0 +1,48 @@
+{% extends 'djassa/djassaman/base.html' %}
+{% load widget_tweaks %}
+
+{% block tire %}Faire une Publication{% endblock tire %}
+
+{% block publication %}active{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Faire une Publication</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- Champ pour le contenu -->
+        <div class="form-group">
+            <label for="id_content">Contenu</label>
+            {{ form.content|add_class:"form-control" }}
+        </div>
+
+        <!-- Champ pour l'image -->
+        <div class="form-group">
+        <label for="id_fichier">Fichier (Image ou Vidéo)</label>
+        {{ form.fichier|add_class:"form-control-file" }}
+    </div>
+
+        <!-- Champ pour la catégorie -->
+        <div class="form-group">
+            <label for="id_categorie">Catégorie</label>
+            {{ form.categorie|add_class:"form-control" }}
+        </div>
+
+        <!-- Champ pour le nom du produit -->
+        <div class="form-group">
+            <label for="id_nom_du_produit">Nom du Produit</label>
+            {{ form.nom_du_produit|add_class:"form-control" }}
+        </div>
+
+        <!-- Champ pour la fonction -->
+        <div class="form-group">
+            <label for="id_fonction">État du Produit</label>
+            {{ form.fonction|add_class:"form-control" }}
+        </div>
+
+        <!-- Bouton pour publier -->
+        <button type="submit" class="btn btn-primary mt-3">Publier</button>
+    </form>
+</div>
+{% endblock %}

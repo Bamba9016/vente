@@ -1,0 +1,17 @@
+{% extends 'djassa/djassaman/base.html' %}
+
+{% block titre %}
+    Enregistrer une demande
+{% endblock %}
+
+{% block content %}
+<h1>Choisissez une catégorie</h1>
+    <ul>
+        {% for categorie in categories %}
+            <li>
+                <a href="{% url 'voir_demandes' categorie %}">{{ categorie }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+{% endblock %}

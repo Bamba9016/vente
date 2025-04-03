@@ -1,0 +1,39 @@
+{% extends 'djassa/djassaman/base.html' %}
+
+{% block titre %}
+    Voir les demandes
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Demandes pour la catégorie : <span class="text-primary">{{ categorie }}</span></h1>
+
+    {% if demandes %}
+        <div class="row">
+            {% for demande in demandes %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title text-dark">{{ demande.nom_du_produit }}</h5>
+                        <p class="card-text text-muted"><strong>Description :</strong> {{ demande.description }}</p>
+                        <p class="card-text"><strong>Statut :</strong> <span class="badge bg-info text-dark">{{ demande.statut }}</span></p>
+                        <p class="card-text"><strong>Prix d'achat :</strong> {{ demande.prix_achat }} €</p>
+                        <p class="card-text"><strong>État du produit :</strong> {{ demande.etat_du_produit }}</p>
+                        <p class="card-text"><strong>Numéro de téléphone :</strong>
+                            {% if demande.numero_telephone %}
+                                {{ demande.numero_telephone }}
+                            {% else %}
+                                Non fourni
+                            {% endif %}
+                        </p>
+                        <p class="card-text text-muted"><small><strong>Date de demande :</strong> {{ demande.created_at }}</small></p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-center text-muted">Aucune demande trouvée pour cette catégorie.</p>
+    {% endif %}
+</div>
+{% endblock %}

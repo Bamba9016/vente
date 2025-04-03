@@ -1,0 +1,62 @@
+{% extends 'djassa/djassaman/base.html' %}
+{% load custom_filters %}
+
+{% block tire %}{% endblock tire %}
+
+{% block content %}
+<main class="container">
+    <!-- Profil Header -->
+    <div class="container profile-header mt-4">
+        <img src="{% if viewuser.profile_picture %}{{ viewuser.profile_picture.url }}{% else %}https://via.placeholder.com/120{% endif %}"
+             alt="Profile Image" class="profile-img">
+        <div class="profile-info">
+            <h2>{{ viewuser.get_full_name }}</h2>
+            <p>@{{ viewuser.username }}</p>
+        </div>
+        <div class="profile-stats">
+            <a href="{% url 'viewabonnes' viewuser.id %}" class="btn btn-outline-primary">{{ viewuser.followers_count }} Followers</a>
+            <a href="{% url 'viewabonnements' viewuser.id %}" class="btn btn-outline-primary">{{ viewuser.following_count }} Suivie</a>
+            <a href="{% url 'amis' user.id %}" class="btn btn-outline-primary">{{ viewuser.friends_count }} Amis</a>
+        </div>
+        <div class="profile-actions">
+            {% if is_following %}
+                <a href="{% url 'unsubscribe' viewuser.id %}?next={{ request.get_full_path }}" class="btn btn-outline-danger ml-3">Se désabonner</a>
+            {% else %}
+                <a href="{% url 'subscribe' viewuser.id %}?next={{ request.get_full_path }}" class="btn btn-outline-primary ml-3">S'abonner</a>
+            {% endif %}
+            <a href="{% url 'conversation' viewuser.id %}" class="btn btn-primary"><i class="fas fa-comment-dots"></i> Message</a>
+        </div>
+    </div>
+
+    <!-- Publications de l'utilisateur -->
+    <div class="container mt-4">
+        <h3>Mes Publications</h3>
+        <div class="row tiktok-grid">
+            {% for publication in user_publications %}
+            <div class="col-12 col-md-6 col-lg-4 mb-3">
+                <div class="card post-card">
+                    <div class="card-body p-0">
+                        {% if publication.fichier %}
+                            {% if publication.is_image %}
+                                <img src="{{ publication.fichier.url }}" class="img-fluid tiktok-post-image"
+                                     alt="Image de la publication" style="max-height: 300px; object-fit: cover;">
+                            {% elif publication.is_video %}
+                                <video class="tiktok-video" controls style="max-height: 300px; object-fit: cover; width: 100%;">
+                                    <source src="{{ publication.fichier.url }}" type="video/mp4">
+                                    Votre navigateur ne supporte pas la vidéo.
+                                </video>
+                            {% endif %}
+                        {% endif %}
+                        <div class="overlay">
+                            <p class="card-text">{{ publication.content }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+                <p>Aucune publication pour le moment.</p>
+            {% endfor %}
+        </div>
+    </div>
+</main>
+{% endblock content %}

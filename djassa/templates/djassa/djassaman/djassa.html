@@ -1,0 +1,68 @@
+{% extends 'djassa/djassaman/base.html' %}
+
+{% block titre %}Vente{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <!-- Card pour enregistrer une demande -->
+        <div class="col-lg-6 col-md-6 mb-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-plus-circle fa-3x mb-3"></i>
+                    <h5 class="card-title">Enregistrer une demande</h5>
+                    <p class="card-text">Cliquez ici pour enregistrer une nouvelle demande.</p>
+                    <a href="{% url 'enregistrer_demande'  %}" class="btn btn-primary">Enregistrer</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card pour voir les demandes enregistrées -->
+        <div class="col-lg-6 col-md-6 mb-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-list-alt fa-3x mb-3"></i>
+                    <h5 class="card-title">Voir les demandes enregistrées</h5>
+                    <p class="card-text">Cliquez ici pour afficher vos demandes enregistrées.</p>
+                    <a href="{% url 'choisir_categorie'  %}" class="btn btn-secondary">Voir</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Catégories pour accéder aux différentes demandes -->
+    <div class="row">
+        <div class="col-12">
+            <h4 class="mb-4">Catégories de demandes</h4>
+        </div>
+        
+        <div class="col-md-4 col-sm-6 mb-4">
+            <a href="#" class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-tag fa-2x mb-3"></i>
+                    <h5 class="card-title">Catégorie 1</h5>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4 col-sm-6 mb-4">
+            <a href="#" class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-tag fa-2x mb-3"></i>
+                    <h5 class="card-title">Catégorie 2</h5>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4 col-sm-6 mb-4">
+            <a href="#" class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-tag fa-2x mb-3"></i>
+                    <h5 class="card-title">Catégorie 3</h5>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

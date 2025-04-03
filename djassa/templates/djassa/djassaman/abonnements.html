@@ -1,0 +1,31 @@
+{% extends 'djassa/djassaman/base.html' %}
+
+{% block title %}Abonnements de {{ profile_user.username }}{% endblock title %}
+
+{% block content %}
+<main class="container mt-4">
+    <h2>Abonnements de {{ profile_user.username }}</h2>
+    <ul class="list-group">
+        {% for follow in abonnements %}
+            <li class="list-group-item d-flex align-items-center">
+                {% if follow.following.profile_picture %}
+                    <img src="{{ follow.following.profile_picture.url }}"
+                         alt="Profile Picture" class="rounded-circle" width="30">
+                {% else %}
+                    <img src="https://via.placeholder.com/40"
+                         alt="Profile Picture" class="rounded-circle" width="30">
+                {% endif %}
+                <span class="ml-3">{{ follow.following.first_name }} {{ follow.following.last_name }}</span>
+
+                <!-- Bouton de désabonnement -->
+                <form method="POST" action="{% url 'unsubscribe' follow.following.id %}?next={{ request.get_full_path }}" class="ml-auto">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm">Se désabonner</button>
+                </form>
+            </li>
+        {% empty %}
+            <li class="list-group-item">Aucun abonnement trouvé.</li>
+        {% endfor %}
+    </ul>
+</main>
+{% endblock content %}

@@ -1,0 +1,26 @@
+{% extends 'djassa/djassaman/base.html' %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="chat-header">
+        <h2>Chat avec {{ other_user.get_full_name }}</h2>
+    </div>
+
+    <div id="chat-messages" class="chat-messages">
+        {% for message in messages %}
+            <div class="{% if message.sender == request.user %}message-sent{% else %}message-received{% endif %}">
+                <p>{{ message.content }}</p>
+                <small>{{ message.timestamp|date:"d M Y, H:i" }}</small>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="chat-input">
+        <form method="post" id="chat-form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Envoyer</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

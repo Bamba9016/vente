@@ -1,0 +1,35 @@
+{% extends 'djassa/djassaman/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Paramètres du Profil</h2>
+    <hr>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h4>Modifier les informations du profil</h4>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="text-center mb-3">
+                    {% if request.user.profile_picture %}
+                        <img src="{{ request.user.profile_picture.url }}" class="rounded-circle" width="150" height="150" alt="Photo de profil">
+                    {% else %}
+                        <img src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/1f464.png" class="rounded-circle" width="150" height="150" alt="Photo de profil par défaut">
+                    {% endif %}
+                </div>
+                {{ profile_form|crispy }}
+                <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+            </form>
+        </div>
+        <div class="col-md-6">
+            <h4>Changer de mot de passe</h4>
+            <form method="POST" action="{% url 'change_password' %}">
+                {% csrf_token %}
+                {{ password_form|crispy }}
+                <button type="submit" class="btn btn-warning">Changer le mot de passe</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

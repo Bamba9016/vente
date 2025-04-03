@@ -1,0 +1,21 @@
+{% extends 'djassa/djassaman/base.html' %}
+
+{% block title %}Amis de {{ profile_user.username }}{% endblock title %}
+
+{% block content %}
+<main class="container mt-4">
+    <h2>Amis de {{ profile_user.username }}</h2>
+    <ul class="list-group">
+        {% for friend in amis %}
+            <li class="list-group-item">
+                <a href="{% url 'profile_view' friend.friend.id %}">
+                    <img src="{{ friend.friend.profile_picture.url }}" alt="Profile Picture" class="rounded-circle" width="30">
+                    {{ friend.friend.username }}
+                </a>
+            </li>
+        {% empty %}
+            <li class="list-group-item">Aucun ami trouvé.</li>
+        {% endfor %}
+    </ul>
+</main>
+{% endblock content %}

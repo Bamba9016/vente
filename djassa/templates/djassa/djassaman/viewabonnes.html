@@ -1,0 +1,37 @@
+{% extends 'djassa/djassaman/base.html' %}
+
+{% block title %}Abonnés de {{ profile_user.username }}{% endblock title %}
+
+{% block content %}
+<main class="container mt-4">
+    <h2>Abonnés de {{ profile_user.username }}</h2>
+    <ul class="list-group">
+        {% for follow in abonnes %}
+            <li class="list-group-item d-flex align-items-center">
+                {% if follow.follower.profile_picture %}
+                    <img src="{{ follow.follower.profile_picture.url }}"
+                         alt="Profile Picture" class="rounded-circle" width="30">
+                {% else %}
+                    <img src="https://via.placeholder.com/40"
+                         alt="Profile Picture" class="rounded-circle" width="30">
+                {% endif %}
+                <span class="ml-3">{{ follow.follower.first_name }} {{ follow.follower.last_name }}</span>
+
+                {% if follow in amis %}
+                    <span class="badge badge-success ml-3">Ami(e)</span>  <!-- Indique qu'ils sont amis -->
+                {% endif %}
+
+                <!-- Bouton d'abonnement si non abonné -->
+                {% if not follow.following == profile_user %}
+                    <form method="POST" action="{% url 'subscribe' follow.follower.id %}" class="ml-auto">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary btn-sm">S'abonner</button>
+                    </form>
+                {% endif %}
+            </li>
+        {% empty %}
+            <li class="list-group-item">Aucun abonné trouvé.</li>
+        {% endfor %}
+    </ul>
+</main>
+{% endblock content %}
