@@ -84,9 +84,9 @@ WSGI_APPLICATION = 'ledjassa.wsgi.application'
 DATABASES = {
 'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'vente_db',
+        'NAME': 'djassa',
         'USER': 'root',
-        'PASSWORD': 'ton_mot_de_passe',
+        'PASSWORD': '',
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'OPTIONS': {
