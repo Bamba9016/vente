@@ -86,7 +86,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'djassa',
         'USER': 'root',
-        'PASSWORD': '',
+        'PASSWORD': 'ton_mot_de_passe',
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'OPTIONS': {
