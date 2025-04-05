@@ -5,16 +5,13 @@
 {% block accueil %}active{% endblock %}
 {% block content %}
 <main class="container mt-4">
-    <!-- Bienvenue Section -->
     <div class="container">
         <h3>Bienvenue, {{ user.first_name }}!</h3>
         <a href="{% url 'publication' %}" class="btn btn-primary">Faire une Publication</a>
         <div class="mt-4">
             {% for publication in publications %}
-                <!-- Publication Card -->
                 <div class="card post-card" data-publication-id="{{ publication.id }}">
                     <div class="card-body">
-                        <!-- Author and Follow Section -->
                         <div class="d-flex align-items-center mb-3">
                             <div class="d-flex">
                                 <a href="{% url 'profilepublication' publication.author.id %}">
@@ -28,29 +25,22 @@
                                     <small class="text-muted">{{ publication.created_at|date:"d M Y, H:i" }}</small>
                                 </div>
                             </div>
-                            
                         </div>
 
-                        <!-- Publication Content -->
                         <p class="card-text">{{ publication.nom_du_produit }}, {{ publication.fonction }} {{ publication.content }}</p>
 
-                        <!-- Upload Preview (Image/Video) -->
-                        <div class="upload-preview mb-3" style="position: relative; width: 100%;">
+                        <div class="upload-preview mb-3">
                             {% if publication.fichier %}
                                 {% if publication.is_image %}
-                                    <img src="{{ publication.fichier.url }}" class="img-fluid w-100 rounded"
-                                         alt="Image de la publication" style="object-fit: cover;" data-toggle="modal" data-target="#imageModal-{{ publication.id }}">
+                                    <img src="{{ publication.fichier.url }}" class="img-fluid w-100 rounded" alt="Image de la publication">
                                 {% elif publication.is_video %}
-                                    <video controls class="mt-2 w-100"
-                                           style="border-radius: 10px; height: auto; width: 100%; object-fit: cover;">
+                                    <video controls class="mt-2 w-100" style="border-radius: 10px;">
                                         <source src="{{ publication.fichier.url }}" type="video/mp4">
-                                        Votre navigateur ne supporte pas la lecture de vidéos.
                                     </video>
                                 {% endif %}
                             {% endif %}
                         </div>
 
-                        <!-- Post Actions (Like, Comment, Share) -->
                         <div class="post-actions mt-3">
                             <a href="{% url 'like_publication' publication.id %}?next={{ request.get_full_path }}"
                                class="text-primary"><i class="fas fa-thumbs-up"></i> {{ publication.likes.count }}</a>
@@ -72,8 +62,7 @@
 
 <!-- Modal pour afficher l'image en grand -->
 {% for publication in publications %}
-<div class="modal fade" id="imageModal-{{ publication.id }}" tabindex="-1" role="dialog"
-     aria-labelledby="imageModalLabel-{{ publication.id }}" aria-hidden="true">
+<div class="modal fade" id="imageModal-{{ publication.id }}" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel-{{ publication.id }}" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -83,8 +72,7 @@
             </div>
             <div class="modal-body">
                 {% if publication.fichier %}
-                <img src="{{ publication.fichier.url }}" class="img-fluid" alt="Image de la publication"
-                     style="object-fit: contain; width: 100%; height: auto;">
+                <img src="{{ publication.fichier.url }}" class="img-fluid" alt="Image de la publication">
                 {% endif %}
             </div>
         </div>
@@ -94,8 +82,7 @@
 
 <!-- Comment Modal -->
 {% for publication in publications %}
-<div class="modal fade" id="commentModal-{{ publication.id }}" tabindex="-1" role="dialog"
-     aria-labelledby="commentModalLabel" aria-hidden="true">
+<div class="modal fade" id="commentModal-{{ publication.id }}" tabindex="-1" role="dialog" aria-labelledby="commentModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -104,7 +91,6 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <!-- Commentaires -->
             <div class="comments mt-3">
                 {% with comments|get_item:publication.id as pub_comments %}
                 {% for comment in pub_comments %}
@@ -122,8 +108,7 @@
                 <input type="hidden" name="next" value="{{ request.get_full_path }}">
                 <div class="modal-body">
                     <div class="form-group">
-                        <textarea class="form-control" name="comment" rows="3"
-                                  placeholder="Votre commentaire..."></textarea>
+                        <textarea class="form-control" name="comment" rows="3" placeholder="Votre commentaire..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -135,49 +120,4 @@
     </div>
 </div>
 {% endfor %}
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const likeLinks = document.querySelectorAll('.post-actions a');
-
-        likeLinks.forEach(link => {
-            link.addEventListener('click', function (event) {
-                event.preventDefault();
-                const url = this.href;
-
-                fetch(url, {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                })
-                .then(response => {
-                    if (response.ok) {
-                        const likeCountElement = this.querySelector('.fas.fa-thumbs-up + span');
-                        if (likeCountElement) {
-                            likeCountElement.textContent = parseInt(likeCountElement.textContent) + 1;
-                        }
-                    }
-                })
-                .catch(error => console.error('Erreur:', error));
-            });
-        });
-    });
-</script>
-
-<script>
-    let hiddenTab;
-
-    function openHiddenTab(url) {
-        hiddenTab = window.open(url, "_blank"); // Ouvre un onglet en arrière-plan
-        history.pushState({ page: "hidden" }, "", "#hidden-tab"); // Ajoute un état à l'historique
-    }
-
-    window.addEventListener("popstate", function () {
-        if (hiddenTab) {
-            hiddenTab.close(); // Ferme l'onglet si on appuie sur retour
-            hiddenTab = null; // Réinitialiser la variable
-        }
-    });
-</script>
 {% endblock %}

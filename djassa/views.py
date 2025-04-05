@@ -172,13 +172,6 @@ def like_publication(request, publication_id):
         Like.objects.create(publication=publication, user=request.user)
         liked = True
 
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        # Réponse JSON pour les requêtes AJAX
-        return JsonResponse({
-            'liked': liked,
-            'likes_count': publication.like_set.count()
-        })
-
     # Redirection pour les requêtes classiques
     next_url = request.GET.get('next', 'accueil')
     return redirect(next_url)
@@ -331,25 +324,35 @@ def viewamis_view(request, viewuser_id):
 @login_required
 def inbox(request):
     """Afficher la liste des conversations de l'utilisateur"""
-
     conversations = Message.objects.filter(
         Q(sender=request.user) | Q(recipient=request.user)
     ).order_by('-timestamp')
 
-    users = set()
+    users_data = {}
     for msg in conversations:
-        users.add(msg.sender)
-        users.add(msg.recipient)
-    users.discard(request.user)  # Ne pas afficher soi-même
+        # L'autre utilisateur dans la conversation
+        other = msg.recipient if msg.sender == request.user else msg.sender
 
-    return render(request, 'djassa/djassaman/inbox.html', {'users': users})
+        # On ignore l'utilisateur connecté
+        if other != request.user:
+            if other not in users_data:
+                last_message = msg
+                unread_count = Message.objects.filter(sender=other, recipient=request.user, is_read=False).count()
+                users_data[other] = {
+                    'user': other,
+                    'last_message': last_message,
+                    'unread_count': unread_count
+                }
 
+    # Récupérer les utilisateurs sans l'utilisateur connecté
+    return render(request, 'djassa/djassaman/inbox.html', {'users': users_data.values()})
 
 @login_required
 def conversation(request, user_id):
     """Afficher une conversation entre deux utilisateurs"""
     recipient = get_object_or_404(CustomUser, id=user_id)
 
+    # Récupérer les messages entre l'utilisateur connecté et le destinataire
     messages = Message.objects.filter(
         (Q(sender=request.user, recipient=recipient) |
          Q(sender=recipient, recipient=request.user))
@@ -358,6 +361,7 @@ def conversation(request, user_id):
     # Marquer les messages comme lus
     messages.filter(recipient=request.user, is_read=False).update(is_read=True)
 
+    # Si le formulaire est soumis (pour envoyer un message)
     if request.method == "POST":
         form = MessageForm(request.POST)
         if form.is_valid():

@@ -17,16 +17,21 @@
     }
 
     .user-item {
+        border-bottom: 1px solid #ddd;
+    }
+
+    .user-item-link {
         display: flex;
         align-items: center;
         justify-content: space-between;
         padding: 10px;
-        border-bottom: 1px solid #ddd;
-        transition: background 0.3s;
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.3s ease;
         position: relative;
     }
 
-    .user-item:hover {
+    .user-item-link:hover {
         background: #f5f5f5;
     }
 
@@ -44,17 +49,21 @@
     .username {
         font-weight: bold;
         color: #333;
-        text-decoration: none;
+        display: block;
+        margin-bottom: 4px;
     }
 
     .last-message {
         font-size: 14px;
         color: #666;
+        margin: 0;
     }
 
     .timestamp {
         font-size: 12px;
         color: #999;
+        white-space: nowrap;
+        margin-left: 10px;
     }
 
     .unread-count {
@@ -68,35 +77,72 @@
         right: 15px;
         top: 15px;
     }
+
+    @media screen and (max-width: 500px) {
+        .user-item-link {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .timestamp {
+            position: static;
+            margin-top: 5px;
+        }
+
+        .unread-count {
+            top: 10px;
+            right: 10px;
+            padding: 3px 6px;
+        }
+    }
+    .unread-status {
+        color: red;
+        font-size: 18px;
+        position: absolute;
+        right: 15px;
+        top: 15px;
+    }
+
+    .unread-status.read::after {
+        content: "↗↗";  /* Deux flèches pour les messages lus */
+    }
+
+    .unread-status.unread::after {
+        content: "↗";  /* Une flèche pour les messages non lus */
+    }
 </style>
 
-<div class="inbox-container">
+<div class="container mt-4 inbox-container">
     <h2>Messagerie</h2>
     <ul class="user-list">
-        {% for user in users %}
-            <li class="user-item">
-                <img src="{{ user.profile.avatar.url }}" alt="Avatar" class="avatar">
-                <div class="user-info">
-                    <a href="{% url 'conversation' user.id %}" class="username">{{ user.username }}</a>
-                    <p class="last-message">
-                        {% if user.last_message %}
-                            {{ user.last_message.content|truncatechars:30 }}
-                        {% else %}
-                            Aucun message
-                        {% endif %}
-                    </p>
-                </div>
-                <span class="timestamp">
-                    {% if user.last_message %}
-                        {{ user.last_message.timestamp|date:"H:i" }}
+        {% for item in users %}
+    <li class="user-item">
+        <a href="{% url 'conversation' item.user.id %}" class="user-item-link">
+            <img src="{% if item.user.profile_picture %}{{ item.user.profile_picture.url }}{% else %}https://via.placeholder.com/120{% endif %}" alt="Avatar" class="avatar">
+            <div class="user-info">
+                <span class="username">{{ item.user.username }}</span>
+                <p class="last-message">
+                    {% if item.last_message %}
+                        {{ item.last_message.content|truncatechars:30 }}
                     {% endif %}
-                </span>
-                {% if user.unread_count > 0 %}
-                    <span class="unread-count">{{ user.unread_count }}</span>
+                </p>
+            </div>
+            <span class="timestamp">
+                {% if item.last_message %}
+                    {{ item.last_message.timestamp|date:"H:i" }}
                 {% endif %}
-            </li>
-        {% endfor %}
+            </span>
+            {% if item.last_message.sender != request.user and item.unread_count > 0 %}
+                <span class="unread-count">{{ item.unread_count }}</span>
+            {% endif %}
+            {% if user.unread_count > 0 %}
+                        <span class="unread-status unread"></span> <!-- Une flèche si non lu -->
+                    {% elif user.unread_count == 0 %}
+                        <span class="unread-status read"></span> <!-- Deux flèches si lu -->
+            {% endif %}
+        </a>
+    </li>
+{% endfor %}
     </ul>
 </div>
-
 {% endblock %}
