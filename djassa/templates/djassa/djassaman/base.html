@@ -171,7 +171,48 @@
        .friend-list ul li i {
            margin-right: 10px;
        }
+
     </style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('search-input');
+    const resultsContainer = document.getElementById('search-results');
+
+    input.addEventListener('input', function () {
+        const query = this.value;
+
+        if (query.length > 1) {
+            fetch(`/ajax/recherche/?q=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    resultsContainer.innerHTML = '';
+                    let hasResults = false;
+
+                    ['users', 'publications', 'demandes'].forEach(type => {
+                        data[type].forEach(item => {
+                            const li = document.createElement('a');
+                            li.className = 'list-group-item list-group-item-action';
+                            li.textContent = `${item.nom} (${item.type})`;
+                            li.href = `/${item.type}/${item.id}/`;  // adapt to your detail URL patterns
+                            resultsContainer.appendChild(li);
+                            hasResults = true;
+                        });
+                    });
+
+                    resultsContainer.style.display = hasResults ? 'block' : 'none';
+                });
+        } else {
+            resultsContainer.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!input.contains(e.target) && !resultsContainer.contains(e.target)) {
+            resultsContainer.style.display = 'none';
+        }
+    });
+});
+</script>
 
 
 </head>
@@ -200,13 +241,14 @@
                     <a class="nav-link" href="{% url 'inbox' %}"><i class="fas fa-comments"></i> Messagerie</a>
                 </li>
             </ul>
-            <form class="form-inline my-2 my-lg-0">
-                <input class="form-control mr-sm-2" type="search" placeholder="Recherche de produits"
-                       aria-label="Recherche">
-                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">
-                    <i class="fas fa-search"></i>
-                </button>
-            </form>
+            <form class="form-inline my-2 my-lg-0 " action="{% url 'recherche_resultats' %}" method="get">
+                <div class="d-flex">
+    <div class="position-relative" style="width: 100%;">
+        <input class="form-control mr-sm-2" id="search-input" type="search" name="q" placeholder="Recherche..." autocomplete="off">
+        <div id="search-results" class="list-group position-absolute" style="z-index: 1000; width: 100%; display: none;"></div>
+    </div>
+    <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Rechercher</button></div>
+</form>
             <div class="dropdown ml-3">
                 <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileDropdown"
                    role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -233,14 +275,14 @@
     <!-- Fixed top section for mobile (logo, search, profile) -->
     <nav class="navbar navbar-light bg-light d-block d-lg-none">
         <div class="d-flex justify-content-between w-100">
-            <a href="#" class="nav-link"><i class="fas fa-comments"></i></a>
+            <a href="{% url 'inbox' %}" class="nav-link"><i class="fas fa-comments"></i></a>
             <form class="form-inline">
                 <input class="form-control mr-sm-2" type="search" placeholder="Recherche de produits"
                        aria-label="Recherche">
 
             </form>
             <a href="/accueil/profile/">
-                <img src="https://via.placeholder.com/40" alt="Profile Image" class="profile-imgdiv">
+                <img src="{{ request.user.profile_picture.url }}" alt="Profile Image" class="profile-imgdiv">
             </a>
         </div>
     </nav>

@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, User
 from django.utils import timezone
 
 class CustomUserManager(BaseUserManager):
@@ -133,6 +133,8 @@ class Comment(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='comments', on_delete=models.CASCADE)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    parent_comment = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies')
+
 
     def __str__(self):
         return f"Commentaire de {self.user} sur {self.publication}"
@@ -208,3 +210,4 @@ class Message(models.Model):
 
     def __str__(self):
         return f"Message de {self.sender} à {self.recipient} : {self.content[:30]}"
+

@@ -1,0 +1,68 @@
+{% extends 'djassa/djassaman/base.html' %}
+{% load custom_filters %}
+
+{% block tire %}{% endblock tire %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>Résultats pour "{{ query }}"</h3>
+
+    <hr>
+    <h4>Utilisateurs</h4>
+    {% if users %}
+        <div class="list-group mb-3">
+            {% for user in users %}
+                {% if user == request.user %}
+                    <!-- Si l'utilisateur est le même que l'utilisateur connecté, redirige vers une autre URL -->
+                    <a href="{% url 'profile' %}" class="list-group-item list-group-item-action">
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="rounded-circle" width="30">
+                        {% else %}
+                            <img src="https://via.placeholder.com/40" alt="Profile Picture" class="rounded-circle" width="30">
+                        {% endif %}
+                        <span class="ml-3">{{ user.first_name }} {{ user.last_name }}</span>
+                    </a>
+                {% else %}
+                    <!-- Sinon, l'utilisateur normal mène à son profil -->
+                    <a href="{% url 'profilepublication' user.id %}" class="list-group-item list-group-item-action">
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="rounded-circle" width="30">
+                        {% else %}
+                            <img src="https://via.placeholder.com/40" alt="Profile Picture" class="rounded-circle" width="30">
+                        {% endif %}
+                        <span class="ml-3">{{ user.first_name }} {{ user.last_name }}</span>
+                    </a>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Aucun utilisateur trouvé.</p>
+    {% endif %}
+
+    <h4>Publications</h4>
+    {% if publications %}
+        <div class="list-group mb-3">
+            {% for pub in publications %}
+                <a href="{% url 'publication_detail' pub.id %}" class="list-group-item list-group-item-action">
+                    {{ pub.nom_du_produit }}
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Aucune publication trouvée.</p>
+    {% endif %}
+
+    <h4>Demandes</h4>
+    {% if demandes %}
+        <div class="list-group mb-3">
+            {% for d in demandes %}
+                <a href="{% url 'voir_demandes' d.id %}" class="list-group-item list-group-item-action">
+                    {{ d.nom_du_produit }}
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Aucune demande trouvée.</p>
+    {% endif %}
+</div>
+{% endblock %}

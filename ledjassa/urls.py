@@ -46,6 +46,12 @@ path('accueil/vente/', views.page_de_vente, name='page_de_vente'),
     path('messagerie/', views.inbox, name='inbox'),
     path('messagerie/<int:user_id>/', views.conversation, name='conversation'),
     path('parametres/', views.parametres_view, name='parametres'),
+    path('comment/<int:comment_id>/reply/', views.reply_to_comment, name='reply_to_comment'),
+    path('ajax/recherche/', views.recherche_ajax, name='recherche_ajax'),
+    path('recherche/', views.recherche_resultats, name='recherche_resultats'),
+path('publication/<int:publication_id>/', views.publication_detail, name='publication_detail'),
+
+
 
 ]
 

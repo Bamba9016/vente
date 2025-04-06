@@ -96,7 +96,7 @@ def change_password(request):
     return render(request, 'djassa/djassaman/change_password.html', {'password_form': password_form})
 
 @login_required(login_url='/login/')
-def profile_view(request):
+def profile_view(request ):
     user = request.user
     user_publications = Publication.objects.filter(author=user).order_by('-created_at')
     return render(request, 'djassa/djassaman/profile.html', {
@@ -160,6 +160,11 @@ def publication_list(request):
         ]
     }
     return JsonResponse(data)
+
+@login_required
+def publication_detail(request, publication_id):
+    publication = get_object_or_404(Publication, id=publication_id)
+    return render(request, 'djassa/djassaman/publication_detail.html', {'publication': publication})
 @login_required
 def like_publication(request, publication_id):
     publication = get_object_or_404(Publication, id=publication_id)
@@ -400,5 +405,93 @@ def parametres_view(request):
     return render(request, 'djassa/djassaman/parametre.html', {
         'profile_form': profile_form,
         'password_form': password_form
+    })
+
+
+
+
+
+@login_required
+def reply_to_comment(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+
+    if request.method == "POST":
+        reply_content = request.POST.get("reply")
+        # Créer une réponse au commentaire
+        Comment.objects.create(
+            user=request.user,
+            content=reply_content,
+            parent_comment=comment,  # Lier la réponse au commentaire parent
+            publication=comment.publication  # Si vous souhaitez lier la réponse à la même publication
+        )
+        return redirect('accueil')  # Ou redirigez vers la page appropriée
+
+    return render(request, 'votre_template.html', {'comment': comment})
+
+def recherche_ajax(request):
+    query = request.GET.get('q', '')
+    if query:
+        publications = Publication.objects.filter(
+            Q(nom_du_produit__icontains=query) |
+            Q(content__icontains=query)
+        )[:5]
+
+        users = CustomUser.objects.filter(
+            Q(username__icontains=query) |
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query)
+        )[:5]
+
+        demandes = Demande.objects.filter(
+            Q(nom_du_produit__icontains=query) |
+            Q(description__icontains=query)
+        )[:5]
+
+        data = {
+            'publications': [
+                {'nom': p.nom_du_produit, 'id': p.id, 'type': 'publication'}
+                for p in publications
+            ],
+            'users': [
+                {'nom': u.username, 'id': u.id, 'type': 'user'}
+                for u in users
+            ],
+            'demandes': [
+                {'nom': d.nom_du_produit, 'id': d.id, 'type': 'demande'}
+                for d in demandes
+            ],
+        }
+
+        return JsonResponse(data)
+    return JsonResponse({'publications': [], 'users': [], 'demandes': []})
+
+def recherche_resultats(request):
+    query = request.GET.get('q', '')
+    publications = []
+    users = []
+    demandes = []
+
+    if query:
+        publications = Publication.objects.filter(
+            Q(nom_du_produit__icontains=query) |
+            Q(content__icontains=query)
+        )
+
+        users = CustomUser.objects.filter(
+            Q(username__icontains=query) |
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query)
+        )
+
+        demandes = Demande.objects.filter(
+            Q(nom_du_produit__icontains=query) |
+            Q(description__icontains=query)
+        )
+
+    return render(request, 'djassa/djassaman/recherche_resultats.html', {
+        'query': query,
+        'publications': publications,
+        'users': users,
+        'demandes': demandes,
     })
 
