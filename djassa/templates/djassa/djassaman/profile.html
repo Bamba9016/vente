@@ -5,7 +5,7 @@
 <main class="container">
     <!-- Profil Header -->
     <div class="container profile-header mt-4">
-        <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}https://via.placeholder.com/120{% endif %}" alt="Profile Image" class="profile-img">
+        <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}https://placehold.co/120x120{% endif %}" alt="Profile Image" class="profile-img">
         <div class="profile-info">
             <h2>{{ user.get_full_name }}</h2>
             <p>@{{ user.username }}</p>

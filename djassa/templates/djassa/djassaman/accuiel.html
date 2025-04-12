@@ -7,272 +7,282 @@
 <main class="container mt-4">
     <div class="container">
         <h3>Bienvenue, {{ user.first_name }}!</h3>
-        <a href="{% url 'publication' %}" class="btn btn-primary">Faire une Publication</a>
-        <div class="mt-4">
+        <a href="{% url 'publication' %}" class="btn btn-primary" id="new-post-btn">Faire une Publication</a>
+        <div class="mt-4" id="publications-container">
             {% for publication in publications %}
-                <div class="card post-card" data-publication-id="{{ publication.id }}">
+                <div class="card post-card" data-publication-id="{{ publication.id }}" id="post-{{ publication.id }}">
                     <div class="card-body">
                         <div class="d-flex align-items-center mb-3">
-                            <div class="d-flex">
+                            <a href="{% url 'profilepublication' publication.author.id %}">
+                                <img src="{% if publication.author.profile_picture %}{{ publication.author.profile_picture.url }}{% else %}https://placehold.co/120x120{% endif %}"
+                                     class="rounded-circle"
+                                     style="width: 50px; height: 50px; object-fit: cover;"
+                                     loading="lazy">
+                            </a>
+                            <div class="ml-3">
                                 <a href="{% url 'profilepublication' publication.author.id %}">
-                                    <img src="{% if publication.author.profile_picture %}{{ publication.author.profile_picture.url }}{% else %}https://via.placeholder.com/50{% endif %}"
-                                         alt="Profile Image" class="rounded-circle" style="width: 50px; height: 50px;">
+                                    <h6 class="mb-0">{{ publication.author.first_name }} {{ publication.author.last_name }}</h6>
                                 </a>
-                                <div class="ml-3">
-                                    <a href="{% url 'profilepublication' publication.author.id %}">
-                                        <h6 class="mb-0">{{ publication.author.first_name }} {{ publication.author.last_name }}</h6>
-                                    </a>
-                                    <small class="text-muted">{{ publication.created_at|date:"d M Y, H:i" }}</small>
-                                </div>
+                                <small class="text-muted">{{ publication.created_at|date:"d M Y, H:i" }}</small>
                             </div>
                         </div>
 
                         <p class="card-text">{{ publication.nom_du_produit }}, {{ publication.fonction }} {{ publication.content }}</p>
 
-                        <div class="upload-preview mb-3">
-                            {% if publication.fichier %}
-                                {% if publication.is_image %}
-                                    <img src="{{ publication.fichier.url }}" class="img-fluid w-100 rounded" alt="Image de la publication">
-                                {% elif publication.is_video %}
-                                    <video controls class="mt-2 w-100" style="border-radius: 10px;">
-                                        <source src="{{ publication.fichier.url }}" type="video/mp4">
-                                    </video>
-                                {% endif %}
+                        {% if publication.fichier %}
+                            {% if publication.is_image %}
+                                <img src="{{ publication.fichier.url }}"
+                                     class="img-fluid w-100 rounded"
+                                     alt="Image de la publication"
+                                     loading="lazy"
+                                     style="aspect-ratio: 16/9; object-fit: contain; background: #f5f5f5;">
+                            {% elif publication.is_video %}
+                                <video controls class="w-100 mt-2 rounded" style="aspect-ratio: 16/9; background: #000;">
+                                    <source src="{{ publication.fichier.url }}" type="video/mp4">
+                                </video>
                             {% endif %}
-                        </div>
+                        {% endif %}
 
                         <div class="post-actions mt-3">
-                            <a href="{% url 'like_publication' publication.id %}?next={{ request.get_full_path }}" class="text-primary">
-                                <i class="fas fa-thumbs-up"></i> {{ publication.likes.count }}
+                            <a href="javascript:void(0);"
+                               class="text-primary like-btn p-0 m-0"
+                               data-publication-id="{{ publication.id }}"
+                               data-likes-count="{{ publication.likes.count }}">
+                                <i class="fas fa-thumbs-up"></i> <span class="like-count">{{ publication.likes.count }}</span>
                             </a>
-                            <a href="#" class="text-primary ml-3" onclick="openDrawer({{ publication.id }})">
-                                <i class="fas fa-comment"></i> {{ publication.comments.count }}
-                            </a>
-                            <a href="{% url 'share_publication' publication.id %}?next={{ request.get_full_path }}" class="text-primary ml-3">
-                                <i class="fas fa-share-alt"></i> {{ publication.shares.count }}
-                            </a>
-                            <a href="tel:{{ publication.author.phone_number }}" class="text-primary ml-3"><i class="fas fa-phone"></i></a>
+                            <a href="{% url 'page_commentaire' publication.id %}" class="text-primary ml-3 comment-link"><i class="fas fa-comment"></i> <span class="comment-count">{{ publication.comments.count }}</span></a>
+                            <a href="javascript:void(0);" class="text-primary ml-3 share-btn" data-publication-id="{{ publication.id }}"><i class="fas fa-share-alt"></i> <span class="share-count">{{ publication.shares.count }}</span></a>
+                            <a href="javascript:void(0);" class="text-primary ml-3 phone-btn" data-phone="{{ publication.author.phone_number }}"><i class="fas fa-phone"></i></a>
                             <a href="mailto:{{ publication.author.email }}" class="text-primary ml-3"><i class="fas fa-envelope"></i></a>
                         </div>
                     </div>
                 </div>
             {% empty %}
-                <p>Aucune publication pour le moment.</p>
+                <p class="text-center py-4">Aucune publication pour le moment.</p>
             {% endfor %}
         </div>
     </div>
 </main>
 
-<!-- COMMENT DRAWER STYLE TIKTOK -->
+<!-- Tiroir de téléphone -->
+<div id="phone-drawer" class="drawer">
+    <div class="drawer-content">
+        <button class="close-btn" id="close-phone-drawer">×</button>
+        <h4>Appeler l'auteur</h4>
+        <p id="phone-number-display"></p>
+        <a href="#" class="btn btn-success" id="call-btn">Appeler</a>
+    </div>
+</div>
+
+<!-- Tiroir de partage -->
+<div id="share-drawer" class="drawer">
+    <div class="drawer-content">
+        <button class="close-btn" id="close-share-drawer">×</button>
+        <h4>Choisissez un réseau pour partager</h4>
+        <ul class="list-unstyled">
+            <li><a id="share-facebook" href="#" target="_blank"><i class="fab fa-facebook"></i> Facebook</a></li>
+            <li><a id="share-twitter" href="#" target="_blank"><i class="fab fa-twitter"></i> Twitter</a></li>
+            <li><a id="share-whatsapp" href="#" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp</a></li>
+            <li><a id="share-email" href="#" target="_blank"><i class="fas fa-envelope"></i> Email</a></li>
+        </ul>
+    </div>
+</div>
+
 <style>
-    /* Style du tiroir des commentaires */
-    .comment-drawer {
+    /* Styles existants */
+    .drawer {
         position: fixed;
         bottom: -100%;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 500px;
-        max-height: 50vh;
-        background: #fff;
-        border-top-left-radius: 15px;
-        border-top-right-radius: 15px;
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
-        overflow: hidden;
-        z-index: 1050;
+        left: 0;
+        width: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        transition: bottom 0.3s ease;
+        z-index: 9999;
         display: flex;
-        flex-direction: column;
-        transition: bottom 0.3s ease-in-out;
+        justify-content: center;
     }
-
-    .comment-drawer.active {
+    .drawer.open {
         bottom: 0;
     }
-
-    .comment-drawer .comments-body {
-        overflow-y: auto;
-        padding: 15px;
-        flex-grow: 1;
-    }
-
-    .comment-drawer .comment-input {
-        border-top: 1px solid #ccc;
-        padding: 10px;
-        display: flex;
-        gap: 10px;
-        align-items: center;
-    }
-
-    .comment-drawer textarea {
-        resize: none;
-        flex-grow: 1;
-    }
-
-    /* Header du tiroir avec le bouton de fermeture */
-    .comment-drawer .drawer-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 15px;
-        border-bottom: 1px solid #ccc;
-    }
-
-    .comment-drawer .close-btn {
-        font-size: 1.5rem;
-        cursor: pointer;
-    }
-
-    /* Style pour les messages dans des cercles */
-    .comment {
-        display: flex;
-        align-items: center;
-        margin-bottom: 15px;
-        border-radius: 50px; /* Cercle autour de chaque message */
-        padding: 10px;
-        background-color: #f0f0f0;
-    }
-
-    .comment .avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        margin-right: 10px;
-        background: #ccc;
-    }
-    .comment .avatar img {
-        width: 30px; /* Réduit la largeur de l'image */
-        height: 30px; /* Réduit la hauteur de l'image */
-        object-fit: cover; /* Assure que l'image est bien recadrée sans déformation */
-    }
-
-    .comment .content {
+    .drawer-content {
+        position: relative;
+        width: 90%;
         max-width: 400px;
-        word-wrap: break-word;
-        background-color: #e0e0e0;
-        padding: 10px;
-        border-radius: 10px;
+        background: #fff;
+        padding: 20px;
+        border-top-left-radius: 15px;
+        border-top-right-radius: 15px;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+        text-align: center;
     }
-
-    .comment .username {
-        font-weight: bold;
-    }
-
-    .comment .comment-body {
-        padding-left: 10px;
-        padding-right: 10px;
-        background-color: #f1f1f1;
-        border-radius: 20px;
-    }
-
-    /* Style pour les réponses */
-    .reply-form {
-        display: none;
-        margin-top: 10px;
-        padding-left: 40px;
-    }
-
-    .reply-btn {
-        font-size: 0.9rem;
-        color: #007bff;
+    .like-btn {
+        transition: all 0.3s ease;
         cursor: pointer;
     }
-
-    .see-replies-btn {
-        font-size: 0.9rem;
-        color: #007bff;
-        cursor: pointer;
-        margin-top: 10px;
+    .like-btn.text-success {
+        color: #28a745 !important;
     }
 
-    .replies {
-        display: none;
-        margin-left: 20px;
+    /* Nouveaux styles pour la stabilité du scroll */
+    html:not(.drawer-open) {
+        scroll-behavior: auto !important;
     }
-
-    .replies.visible {
-        display: block;
+    body.drawer-open {
+        position: fixed;
+        width: 100%;
+        overflow: hidden;
     }
 </style>
 
-<!-- COMMENTAIRES PAR PUBLICATION -->
-{% for publication in publications %}
-<div class="comment-drawer" id="commentDrawer-{{ publication.id }}">
-    <div class="drawer-header">
-        <h5 class="mb-0">Commentaires</h5>
-        <span class="close-btn" onclick="closeDrawer({{ publication.id }})">&times;</span>
-    </div>
-    <div class="comments-body">
-        {% with comments|get_item:publication.id as pub_comments %}
-            {% for comment in pub_comments %}
-                <div class="comment mb-2" id="comment-{{ comment.id }}">
-                    <div class="avatar">
-                        <img src="{% if comment.user.profile_picture %}{{ comment.user.profile_picture.url }}{% else %}https://via.placeholder.com/40{% endif %}" alt="Avatar">
-                    </div>
-                    <div class="content">
-                        <strong>{{ comment.user.username }}</strong>: <span class="comment-body">{{ comment.content }}</span>
-                        <div>
-                            <span class="reply-btn" onclick="toggleReplyForm({{ comment.id }})">Répondre</span>
-                        </div>
-                        <div class="reply-form" id="replyForm-{{ comment.id }}">
-                            <form action="{% url 'reply_to_comment' comment.id %}" method="post">
-                                {% csrf_token %}
-                                <textarea name="reply" class="form-control" rows="2" placeholder="Répondre..." required></textarea>
-                                <button type="submit" class="btn btn-primary mt-2">Envoyer</button>
-                            </form>
-                        </div>
-
-                        <!-- Afficher le bouton "Voir les réponses" seulement si des réponses existent -->
-                        {% if comment.replies.count > 0 %}
-                            <span class="see-replies-btn" onclick="toggleReplies({{ comment.id }})">
-                                Voir les réponses
-                            </span>
-                        {% endif %}
-
-                        <!-- Affichage des réponses -->
-                        <div class="replies" id="replies-{{ comment.id }}">
-                            {% for reply in comment.replies.all %}
-                                <div class="reply">
-                                    <strong>{{ reply.user.username }} :</strong> {{ reply.content }}
-                                </div>
-                            {% empty %}
-                                <p>Aucune réponse pour ce commentaire.</p>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            {% empty %}
-                <p>Aucun commentaire pour cette publication.</p>
-            {% endfor %}
-        {% endwith %}
-    </div>
-    <form action="{% url 'comment_publication' publication.id %}" method="post" class="comment-input">
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{{ request.get_full_path }}">
-        <textarea name="comment" class="form-control" rows="1" placeholder="Ajouter un commentaire..." required></textarea>
-        <button class="btn btn-primary" type="submit">Envoyer</button>
-    </form>
-</div>
-{% endfor %}
-
-<!-- SCRIPT D’OUVERTURE DU TIROIR ET GESTION DES REPONSES -->
 <script>
-function openDrawer(pubId) {
-    document.querySelectorAll('.comment-drawer').forEach(drawer => drawer.classList.remove('active'));
-    document.getElementById('commentDrawer-' + pubId).classList.add('active');
-}
+// Gestion robuste du scroll
+document.addEventListener('DOMContentLoaded', function() {
+    // Sauvegarde de la position avant toute action
+    let scrollPosition = 0;
 
-function closeDrawer(pubId) {
-    document.getElementById('commentDrawer-' + pubId).classList.remove('active');
-}
+    // Système de restauration du scroll
+    function saveScrollPosition() {
+        scrollPosition = window.scrollY || document.documentElement.scrollTop;
+        sessionStorage.setItem('lastScrollPosition', scrollPosition);
+    }
 
-function toggleReplyForm(commentId) {
-    var replyForm = document.getElementById('replyForm-' + commentId);
-    replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
-}
+    function restoreScrollPosition() {
+        const savedPosition = sessionStorage.getItem('lastScrollPosition');
+        if (savedPosition) {
+            // Technique de restauration progressive
+            const restore = () => {
+                window.scrollTo(0, parseInt(savedPosition));
+                if (Math.abs(window.scrollY - parseInt(savedPosition)) > 5) {
+                    requestAnimationFrame(restore);
+                }
+            };
+            setTimeout(restore, 50);
+            setTimeout(restore, 200);
+        }
+    }
 
-function toggleReplies(commentId) {
-    var replies = document.getElementById('replies-' + commentId);
-    replies.classList.toggle('visible');
-}
+    // Sauvegarder avant toute action
+    window.addEventListener('beforeunload', saveScrollPosition);
+    document.querySelectorAll('a[href^="#"], .comment-link, #new-post-btn').forEach(el => {
+        el.addEventListener('click', saveScrollPosition);
+    });
+
+    // Restaurer après chargement
+    restoreScrollPosition();
+
+    // Gestion des tiroirs améliorée
+    function toggleDrawer(drawerId, open) {
+        const drawer = document.getElementById(drawerId);
+        if (open) {
+            saveScrollPosition();
+            document.body.classList.add('drawer-open');
+            document.body.style.top = `-${scrollPosition}px`;
+            drawer.classList.add('open');
+        } else {
+            document.body.classList.remove('drawer-open');
+            drawer.classList.remove('open');
+            window.scrollTo(0, parseInt(document.body.style.top || '0') * -1);
+            document.body.style.top = '';
+        }
+    }
+
+    // Événements des tiroirs
+    document.querySelectorAll('.phone-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.getElementById('phone-number-display').textContent = this.dataset.phone;
+            document.getElementById('call-btn').href = `tel:${this.dataset.phone}`;
+            toggleDrawer('phone-drawer', true);
+        });
+    });
+
+    document.querySelectorAll('.share-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const pubId = this.dataset.publicationId;
+            const baseUrl = `${window.location.origin}{% url 'page_commentaire' 0 %}`.replace('0', pubId);
+
+            document.getElementById('share-facebook').href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(baseUrl)}`;
+            document.getElementById('share-twitter').href = `https://twitter.com/intent/tweet?url=${encodeURIComponent(baseUrl)}`;
+            document.getElementById('share-whatsapp').href = `https://api.whatsapp.com/send?text=${encodeURIComponent(baseUrl)}`;
+            document.getElementById('share-email').href = `mailto:?subject=Regardez cette publication&body=${encodeURIComponent(baseUrl)}`;
+
+            toggleDrawer('share-drawer', true);
+        });
+    });
+
+    document.getElementById('close-phone-drawer').addEventListener('click', () => toggleDrawer('phone-drawer', false));
+    document.getElementById('close-share-drawer').addEventListener('click', () => toggleDrawer('share-drawer', false));
+
+    // Gestion des likes en Ajax
+    document.querySelectorAll('.like-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const pubId = this.dataset.publicationId;
+            const likeCount = this.querySelector('.like-count');
+
+            fetch(`{% url 'like_publication' 0 %}`.replace('0', pubId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: `next=${encodeURIComponent(window.location.pathname)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    likeCount.textContent = data.likes_count;
+                    this.classList.toggle('text-success');
+                }
+            });
+        });
+    });
+
+    // Détection des changements de taille pour éviter les sauts
+    let resizeObserver;
+    if ('ResizeObserver' in window) {
+        resizeObserver = new ResizeObserver(() => {
+            if (!document.body.classList.contains('drawer-open')) {
+                window.scrollTo(0, scrollPosition);
+            }
+        });
+        document.querySelectorAll('img, video').forEach(el => resizeObserver.observe(el));
+    }
+});
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const seenIds = new Set();
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const postId = entry.target.dataset.publicationId;
+                if (!seenIds.has(postId)) {
+                    seenIds.add(postId);
+
+                    // Envoyer à Django
+                    fetch("{% url 'marquer_vues' %}", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}"
+                        },
+                        body: JSON.stringify({
+                            seen_ids: [parseInt(postId)]
+                        })
+                    });
+                }
+            }
+        });
+    }, {
+        threshold: 0.75  // Au moins 75% du post doit être visible pour le compter
+    });
+
+    document.querySelectorAll('.post-card').forEach(card => {
+        observer.observe(card);
+    });
+});
+</script>
+
+
 
 {% endblock %}

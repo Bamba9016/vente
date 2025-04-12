@@ -1,19 +1,23 @@
+import json
 import logging
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Q
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, update_session_auth_hash, logout
 from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from . import models
 from .forms import InscriptionForm, LoginForm, UserProfileForm, PasswordUpdateForm, PublicationForm, DemandeForm, \
     MessageForm
-from .models import Publication, Comment, Share, Like, Follow, CustomUser, Demande, Friend, Message
+from .models import Publication, Comment, Share, Like, Follow, CustomUser, Demande, Friend, Message, Notification
 
 logger = logging.getLogger(__name__)
 
@@ -45,30 +49,49 @@ def login_view(request):
     return render(request, 'djassa/connexion.html', {'form': form})
 
 
+@csrf_exempt
+def marquer_publications_vues(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        seen_ids = data.get('seen_ids', [])
+
+        if not isinstance(seen_ids, list):
+            return JsonResponse({'status': 'error', 'message': 'Invalid data'}, status=400)
+
+        publications_vues = Publication.objects.filter(id__in=seen_ids)
+
+        if request.user.is_authenticated:
+            request.user.publications_vues.add(*publications_vues)
+
+        return JsonResponse({'status': 'success', 'seen_ids': seen_ids})
+
+    return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
+
 @login_required(login_url='/login/')
 def accueil_view(request):
     user = request.user
-    if not user.profile_picture:
-        user.profile_picture = 'https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/1f464.png'  # Assure-toi que ce fichier existe dans ton dossier media
 
-    publications = Publication.objects.exclude(author=user).order_by('created_at')
+    # Récupérer les ID des publications déjà vues
+    publications_vues_ids = user.publications_vues.values_list('id', flat=True)
+
+    # Exclure les publications vues et celles de l'utilisateur lui-même
+    publications = Publication.objects.exclude(author=user).exclude(id__in=publications_vues_ids).order_by('created_at')
+
     follow_status = {}
     comments = {}
 
     for publication in publications:
-        # Vérifier le statut de suivi
-        is_following = Follow.objects.filter(follower=request.user, following=publication.author).exists()
+        is_following = Follow.objects.filter(follower=user, following=publication.author).exists()
         follow_status[publication.id] = is_following
-
-        # Récupérer les commentaires pour chaque publication
         comments[publication.id] = list(Comment.objects.filter(publication=publication))
 
     context = {
         'publications': publications,
         'follow_status': follow_status,
-        'comments': comments  # Inclure les commentaires dans le contexte
+        'comments': comments,
     }
     return render(request, 'djassa/djassaman/accuiel.html', context)
+
 
 @login_required(login_url='/login/')
 def modifier_profile_view(request):
@@ -141,7 +164,7 @@ def publication_view(request):
 
 @login_required(login_url='/login/')
 def publication_list(request):
-    publications = Publication.objects.all().order_by('-created_at')  # Trier par date de création décroissante
+    publications = Publication.objects.all().order_by('-created_at')[:10]  # Trier par date de création décroissante
     data = {
         'publications': [
             {
@@ -176,6 +199,13 @@ def like_publication(request, publication_id):
     else:
         Like.objects.create(publication=publication, user=request.user)
         liked = True
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'status': 'success',
+                'likes_count': publication.likes.count()
+            })
+        return redirect(request.POST.get('next', 'accueil'))
+
 
     # Redirection pour les requêtes classiques
     next_url = request.GET.get('next', 'accueil')
@@ -185,17 +215,33 @@ def like_publication(request, publication_id):
 @login_required
 def comment_publication(request, publication_id):
     if request.method == 'POST':
-        publication = get_object_or_404(Publication, id=publication_id)
         content = request.POST.get('comment')
-        if content.strip():  # Vérifie que le commentaire n'est pas vide
-            Comment.objects.create(publication=publication, user=request.user, content=content)
-            messages.success(request, 'Comment added!')
-        else:
-            messages.error(request, 'Comment cannot be empty.')
+        publication = Publication.objects.get(id=publication_id)
 
-    # Récupérer le paramètre `next`
-    next_url = request.GET.get('next','accueil' )  # Par défaut, redirige vers 'accueil'
-    return redirect(next_url)
+        comment = Comment.objects.create(
+            user=request.user,
+            publication=publication,
+            content=content
+        )
+
+        return JsonResponse({
+            'status': 'success',
+            'comment': {
+                'username': comment.user.username,
+                'content': comment.content,
+                'user_avatar': comment.user.profile_picture.url if comment.user.profile_picture else 'https://placehold.co/120x120',
+                'user_profile_url': f'/profilepublication/{comment.user.id}/'
+            }
+        })
+    return JsonResponse({'status': 'error', 'message': 'Méthode non autorisée'}, status=405)
+
+def page_commentaire(request, publication_id):
+    publication = get_object_or_404(Publication, id=publication_id)
+    comments = Comment.objects.filter(publication=publication).select_related('user').prefetch_related('replies').order_by('-created_at')
+    return render(request, 'djassa/djassaman/commentaire.html', {
+        'publication': publication,
+        'comments': comments
+    })
 
 @login_required
 def share_publication(request, publication_id):
@@ -424,7 +470,7 @@ def reply_to_comment(request, comment_id):
             parent_comment=comment,  # Lier la réponse au commentaire parent
             publication=comment.publication  # Si vous souhaitez lier la réponse à la même publication
         )
-        return redirect('accueil')  # Ou redirigez vers la page appropriée
+        return redirect('page_commentaire', publication_id=comment.publication.id)  # Ou redirigez vers la page appropriée
 
     return render(request, 'votre_template.html', {'comment': comment})
 
@@ -493,5 +539,15 @@ def recherche_resultats(request):
         'publications': publications,
         'users': users,
         'demandes': demandes,
+    })
+
+
+
+def notifications_view(request):
+    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+    unread_count = notifications.filter(is_read=False).count()  # Compter les notifications non lues
+    return render(request, 'djassa/djassaman/notifications_list.html', {
+        'notifications': notifications,
+        'unread_count': unread_count
     })
 

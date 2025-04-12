@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, User
 from django.utils import timezone
+from django_countries.fields import CountryField
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, email, password=None, **extra_fields):
@@ -36,6 +37,13 @@ class CustomUser(AbstractBaseUser):
     friends_count = models.PositiveIntegerField(default=0)  # Nombre d'amis
     bio = models.TextField(max_length=500, blank=True)  # Biographie de l'utilisateur
     website = models.URLField(max_length=200, blank=True)  # URL du site web de l'utilisateur
+    publications_vues = models.ManyToManyField('Publication', blank=True)
+
+
+    # Champs ajoutés
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True)
+    country = CountryField(blank=True, null=True)
 
     objects = CustomUserManager()
 
@@ -210,4 +218,22 @@ class Message(models.Model):
 
     def __str__(self):
         return f"Message de {self.sender} à {self.recipient} : {self.content[:30]}"
+
+
+class Notification(models.Model):
+    NOTIF_TYPES = [
+        ('like', 'J\'aime'),
+        ('comment', 'Commentaire'),
+        ('follow', 'Abonnement'),
+        ('message', 'Message'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
+    message = models.TextField()  # Contenu du message de notification
+    notif_type = models.CharField(max_length=20, choices=NOTIF_TYPES, default='like')  # Valeur par défaut
+    is_read = models.BooleanField(default=False)  # Si la notification est lue ou non
+    created_at = models.DateTimeField(auto_now_add=True)  # Date de création de la notification
+
+    def __str__(self):
+        return f'Notification pour {self.user.username}: {self.message}'
 

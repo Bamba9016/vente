@@ -1,0 +1,29 @@
+{% extends 'djassa/djassaman/base.html' %}
+{% load custom_filters %}
+
+{% block tire %}{% endblock tire %}
+{% block accueil %}active{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Notifications</h2>
+    <div class="list-group">
+        {% for notification in notifications %}
+            <a href="#" class="list-group-item list-group-item-action {% if not notification.is_read %} bg-light {% endif %}">
+                <strong>{{ notification.user.username }}</strong>
+                {% if notification.notif_type == 'like' %}
+                    vous a donné un J'aime sur votre publication
+                {% elif notification.notif_type == 'comment' %}
+                    a commenté votre publication : "{{ notification.message }}"
+                {% elif notification.notif_type == 'follow' %}
+                    vous a suivi
+                {% elif notification.notif_type == 'message' %}
+                    vous a envoyé un message
+                {% endif %}
+                <small class="text-muted">{{ notification.created_at }}</small>
+            </a>
+        {% empty %}
+            <p>Vous n'avez aucune notification.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -50,7 +50,9 @@ path('accueil/vente/', views.page_de_vente, name='page_de_vente'),
     path('ajax/recherche/', views.recherche_ajax, name='recherche_ajax'),
     path('recherche/', views.recherche_resultats, name='recherche_resultats'),
 path('publication/<int:publication_id>/', views.publication_detail, name='publication_detail'),
-
+    path('notifications/', views.notifications_view, name='notifications'),
+    path('commentaire/<int:publication_id>/', views.page_commentaire, name='page_commentaire'),
+path('api/marquer-vues/', views.marquer_publications_vues, name='marquer_vues'),
 
 
 ]

@@ -118,7 +118,7 @@
         {% for item in users %}
     <li class="user-item">
         <a href="{% url 'conversation' item.user.id %}" class="user-item-link">
-            <img src="{% if item.user.profile_picture %}{{ item.user.profile_picture.url }}{% else %}https://via.placeholder.com/120{% endif %}" alt="Avatar" class="avatar">
+            <img src="{% if item.user.profile_picture %}{{ item.user.profile_picture.url }}{% else %}https://placehold.co/120x120{% endif %}" alt="Avatar" class="avatar">
             <div class="user-info">
                 <span class="username">{{ item.user.username }}</span>
                 <p class="last-message">

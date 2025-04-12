@@ -1,8 +1,13 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import PasswordChangeForm
+from django_countries.fields import CountryField
+from django_countries.widgets import CountrySelectWidget
+from .models import CustomUser
+from django.core.exceptions import ValidationError
 
 from djassa.models import Publication, Demande, Message
+import phonenumbers
 
 User = get_user_model()
 
@@ -12,9 +17,22 @@ class InscriptionForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'date_of_birth', 'gender', 'mot_de_passe','profile_picture']
+        fields = [
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'date_of_birth',
+            'gender',
+            'phone_number',
+            'country',
+            'city',
+            'profile_picture',
+            'mot_de_passe',
+        ]
         widgets = {
             'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
+            'country': CountrySelectWidget(),  # widget pour liste déroulante des pays
         }
         labels = {
             'username': 'Nom d’utilisateur',
@@ -23,16 +41,13 @@ class InscriptionForm(forms.ModelForm):
             'last_name': 'Nom',
             'date_of_birth': 'Date de naissance',
             'gender': 'Genre',
+            'phone_number': 'Numéro de téléphone',
+            'country': 'Pays',
+            'city': 'Ville',
+            'profile_picture': 'Photo de profil',
         }
 
-    def clean(self):
-        cleaned_data = super().clean()
-        mot_de_passe = cleaned_data.get("mot_de_passe")
-        confirmation_mot_de_passe = cleaned_data.get("confirmation_mot_de_passe")
 
-        if mot_de_passe and confirmation_mot_de_passe and mot_de_passe != confirmation_mot_de_passe:
-            raise forms.ValidationError("Les mots de passe ne correspondent pas.")
-        return cleaned_data
 
     def save(self, commit=True):
         utilisateur = super().save(commit=False)
