@@ -7,12 +7,16 @@ from djassa.views import inbox, conversation
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.inscription_view, name='inscription'),
+    path('register', views.inscription_view, name='inscription'),
     path('login/', views.login_view, name='login'),
+    path('loginuser/', views.loginuser_view, name='loginuser'),
 
     path('accueil/', views.accueil_view, name='accueil'),
+    path('', views.accueilogin_view, name='accueilogin'),
+
     path('accueil/profile/', views.profile_view, name='profile'),
     path('accueil/profilepublication/<int:user_id>/', views.profilepublication_view, name='profilepublication'),
+    path('profileuser/<int:user_id>/', views.profileuser_view, name='profileuser'),
 
     path('accueil/modifier_profile/', views.modifier_profile_view, name='modifier_profile'),
     path('accueil/change_password/', views.change_password, name='change_password'),
@@ -28,6 +32,8 @@ path('subscribe/<int:user_id>/', views.subscribe_view, name='subscribe'),
 
 path('accueil/unsubscribe/<int:user_id>/', views.unsubscribe_view, name='unsubscribe'),
 path('accueil/vente/', views.page_de_vente, name='page_de_vente'),
+path('vente/', views.ventuser, name='page_de_vente'),
+
     path('enregistrer-demande/', views.enregistrer_demande, name='enregistrer_demande'),
     path('categories/', views.choisir_categorie, name='choisir_categorie'),
     path('demandes/<str:categorie>/', views.voir_demandes, name='voir_demandes'),
@@ -49,7 +55,9 @@ path('accueil/vente/', views.page_de_vente, name='page_de_vente'),
     path('comment/<int:comment_id>/reply/', views.reply_to_comment, name='reply_to_comment'),
     path('ajax/recherche/', views.recherche_ajax, name='recherche_ajax'),
     path('recherche/', views.recherche_resultats, name='recherche_resultats'),
-path('publication/<int:publication_id>/', views.publication_detail, name='publication_detail'),
+    path('rechercheuser/', views.rechercheuser, name='rechercheuser'),
+
+    path('publication/<int:publication_id>/', views.publication_detail, name='publication_detail'),
     path('notifications/', views.notifications_view, name='notifications'),
     path('commentaire/<int:publication_id>/', views.page_commentaire, name='page_commentaire'),
 path('api/marquer-vues/', views.marquer_publications_vues, name='marquer_vues'),

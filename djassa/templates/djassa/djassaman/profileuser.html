@@ -1,22 +1,26 @@
-{% extends 'djassa/djassaman/base.html' %}
+{% extends 'djassa/djassaman/baselogin.html' %}
+{% load custom_filters %}
+
 {% block tire %}{% endblock tire %}
 
 {% block content %}
-<main class="container ">
+<main class="container">
     <!-- Profil Header -->
     <div class="container profile-header mt-4">
-        <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}https://placehold.co/120x120{% endif %}" alt="Profile Image" class="profile-img">
+        <img src="{% if viewuser.profile_picture %}{{ viewuser.profile_picture.url }}{% else %}https://placehold.co/120x120{% endif %}"
+             alt="Profile Image" class="profile-img">
         <div class="profile-info">
-            <h2>{{ user.get_full_name }}</h2>
-            <p>@{{ user.username }}</p>
+            <h2>{{ viewuser.get_full_name }}</h2>
+            <p>@{{ viewuser.username }}</p>
         </div>
         <div class="profile-stats">
-            <a href="{% url 'abonnes' user.id %}" class="btn btn-outline-primary">{{ user.followers_count }} Followers</a>
-            <a href="{% url 'abonnements' user.id %}" class="btn btn-outline-primary">{{ user.following_count }} Suivie</a>
-            <a href="{% url 'amis' user.id %}" class="btn btn-outline-primary">{{ user.friends_count }} Amis</a>
+            <a href="{% url 'viewabonnes' viewuser.id %}" class="btn btn-outline-primary">{{ viewuser.followers_count }} Followers</a>
+            <a href="{% url 'viewabonnements' viewuser.id %}" class="btn btn-outline-primary">{{ viewuser.following_count }} Suivie</a>
+            <a href="{% url 'amis' viewuser.id %}" class="btn btn-outline-primary">{{ viewuser.friends_count }} Amis</a>
         </div>
         <div class="profile-actions">
-            <a href="{% url 'inbox'  %}" class="btn btn-primary"><i class="fas fa-comment-dots"></i> Message</a>
+                <a href="{% url 'loginuser' %}"  class="btn btn-outline-primary ml-3">S'abonner</a>
+            <a href="{% url 'loginuser'  %}" class="btn btn-primary"><i class="fas fa-comment-dots"></i> Message</a>
         </div>
     </div>
 

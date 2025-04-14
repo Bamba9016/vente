@@ -1,357 +1,370 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Messagerie</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Messagerie</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
 
-        .messaging-app {
-            display: flex;
-            margin: auto;
-            width: 30%;
-            height: 100vh;
-            background: #fff;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        .inbox-panel {
-            width: 35%;
-            background: #f0f2f5;
-            border-right: 1px solid #ddd;
-            overflow-y: auto;
-        }
-
-        .user-list {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-        }
-
-        .user-item {
-            padding: 15px;
-            border-bottom: 1px solid #ddd;
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            transition: background 0.3s;
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .user-item:hover {
-            background: #e4e6eb;
-        }
-
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-right: 10px;
-        }
-
-        .user-info {
-            flex: 1;
-        }
-
-        .username {
-            font-weight: bold;
-            display: block;
-        }
-
-        .last-message {
-            font-size: 13px;
-            color: #666;
-        }
-
-        .unread-count {
-            background: red;
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-            border-radius: 50%;
-            padding: 4px 7px;
-            margin-left: 8px;
-        }
-
-        .chat-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            background: #f9f9f9;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .chat-header .avatar {
-            width: 45px;
-            height: 45px;
-        }
-
-        .chat-header .username {
-            font-weight: bold;
-            font-size: 16px;
-        }
-
-        .messages {
-             flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            padding: 20px;
-            overflow-y: auto;
-            background: #e5ddd5;
-        }
-
-        .date-separator {
-            text-align: center;
-            margin: 10px 0;
-            font-size: 13px;
-            color: #555;
-        }
-
-        .message {
-            display: inline-block;
-            word-wrap: break-word;
-            word-break: break-word;
-            max-width: 50%;
-            width: fit-content;
-            padding: 10px 15px;
-            border-radius: 15px;
-            font-size: 14px;
-            line-height: 1.4;
-            margin-bottom: 10px;
-        }
-
-        .sent {
-            background: #dcf8c6;
-            margin-left: auto;
-            text-align: left;
-        }
-
-        .received {
-            background: #fff;
-            margin-right: auto;
-            text-align: left;
-        }
-
-        .timestamp {
-            display: block;
-            font-size: 11px;
-            color: #555;
-            margin-top: 5px;
-            text-align: right;
-        }
-
-        .chat-form {
-            padding: 10px;
-            background: #f0f0f0;
-            border-top: 1px solid #ccc;
-            display: flex;
-        }
-
-        .chat-form textarea {
-            flex: 1;
-            border: none;
-            border-radius: 20px;
-            padding: 10px 15px;
-            resize: none;
-            font-size: 14px;
-            outline: none;
-        }
-
-        .chat-form button {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            margin-left: 10px;
-            border-radius: 20px;
-            cursor: pointer;
-        }
-
-        .back-button {
-            top: 15px;
-            left: 15px;
-            font-size: 20px;
-            color: #007bff;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        /* Media Queries */
-        @media (max-width: 900px) {
-            .messaging-app {
-                flex-direction: column;
-                margin: auto;
-                width:100%;
-            }
-            .message {
-                display: inline-block;
-                word-wrap: break-word;
-                word-break: break-word;
-                max-width: 10%;
-                width: fit-content;
-                padding: 10px 15px;
-                border-radius: 15px;
-                font-size: 14px;
-                line-height: 1.4;
-                margin-bottom: 10px;
-            }
-
-            .inbox-panel {
-                width: 100%;
-                height: 40vh;
-                border-right: none;
-                border-bottom: 1px solid #ddd;
-            }
-
-            .chat-panel {
-                width: 100%;
-                height: 60vh;
-            }
-
-            .chat-header {
-                gap: 10px;
-            }
-
-            .chat-header .avatar {
-                width: 35px;
-                height: 35px;
-            }
-
-            .chat-header .username {
-                font-size: 14px;
-            }
-
-            .messages {
-                padding: 10px;
-            }
-
-            .message {
-                max-width: 100%;
-            }
-
-            .back-button {
-                top: 10px;
-                left: 10px;
-                font-size: 18px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .chat-form {
-                padding: 5px;
-            }
-
-            .chat-form textarea {
-                font-size: 12px;
-                padding: 8px 12px;
-            }
-
-            .chat-form button {
-                padding: 8px 16px;
-            }
-            .message {
-            display: inline-block;
-            word-wrap: break-word;
-            word-break: break-word;
-            max-width: 10%;
-            width: fit-content;
-            padding: 10px 15px;
-            border-radius: 15px;
-            font-size: 14px;
-            line-height: 1.4;
-            margin-bottom: 10px;
-        }
-        }
-    </style>
-</head>
-<body>
-    <div class="messaging-app">
-        <!-- Chat panel -->
-        <div class="chat-panel">
-            <div class="chat-header">
-                <a href="#" id="backButton" class="back-button">&larr; Retour</a>
-                <img src="{% if recipient.profile_picture %}{{ recipient.profile_picture.url }}{% else %}https://placehold.co/120x120{% endif %}" class="avatar">
-                <span class="username">{{ recipient.username }}</span>
-            </div>
-
-            <div class="messages" id="messages">
-                {% regroup messages by timestamp.date as date_groups %}
-                {% for group in date_groups %}
-                    <div class="date-separator">
-                        {% if group.grouper == today %}
-                            Aujourd'hui
-                        {% elif group.grouper == yesterday %}
-                            Hier
-                        {% else %}
-                            {{ group.grouper|date:"d M Y" }}
-                        {% endif %}
-                    </div>
-                    {% for message in group.list %}
-                        <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}">
-                            <p>{{ message.content }}</p>
-                            <span class="timestamp">{{ message.timestamp|date:"H:i" }}</span>
-                        </div>
-                    {% endfor %}
-                {% endfor %}
-            </div>
-
-            <form method="POST" class="chat-form">
-                {% csrf_token %}
-                <textarea name="content" placeholder="Écrire un message..." rows="1" required></textarea>
-                <button type="submit">Envoyer</button>
-            </form>
-        </div>
-    </div>
-
-    <script>
-    const msgContainer = document.getElementById("messages");
-
-    // Fonction pour scroller vers le bas
-    function scrollToBottom() {
-        msgContainer.scrollTop = msgContainer.scrollHeight;
     }
 
-    // Lors du chargement de la page
-    window.onload = function() {
-        // Ajoute une fausse entrée dans l'historique pour capter le "retour"
-        history.pushState(null, null, window.location.href);
-        scrollToBottom();
+    .messaging-app {
+      display: flex;
+      margin: auto;
+      width: 100%;
+      max-width: 600px;
+      height: 90vh;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      flex-direction: row;
+    }
+
+    .inbox-panel {
+      width: 35%;
+      background: #f0f2f5;
+      border-right: 1px solid #ddd;
+      overflow-y: auto;
+    }
+
+    .user-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .user-item {
+      padding: 15px;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: background 0.3s;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .user-item:hover {
+      background: #e4e6eb;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+
+    .user-info {
+      flex: 1;
+    }
+
+    .username {
+      font-weight: bold;
+      display: block;
+    }
+
+    .last-message {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .unread-count {
+      background: red;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      border-radius: 50%;
+      padding: 4px 7px;
+      margin-left: 8px;
+    }
+
+    .chat-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 15px;
+      background: #f9f9f9;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .chat-header .avatar {
+      width: 45px;
+      height: 45px;
+    }
+
+    .chat-header .username {
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .messages {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding: 20px;
+      overflow-y: auto;
+      background: #e5ddd5;
+    }
+
+    .date-separator {
+      text-align: center;
+      margin: 10px 0;
+      font-size: 13px;
+      color: #555;
+    }
+
+    .message {
+      word-wrap: break-word;
+      word-break: break-word;
+      max-width: 60%;
+      padding: 10px 15px;
+      border-radius: 15px;
+      font-size: 14px;
+      line-height: 1.4;
+      margin-bottom: 10px;
+    }
+
+    .sent {
+      background: #dcf8c6;
+      margin-left: auto;
+      text-align: left;
+    }
+
+    .received {
+      background: #fff;
+      margin-right: auto;
+      text-align: left;
+    }
+
+    .timestamp {
+      display: block;
+      font-size: 11px;
+      color: #555;
+      margin-top: 5px;
+      text-align: right;
+    }
+
+    .chat-form {
+      padding: 10px;
+      background: #f0f0f0;
+      border-top: 1px solid #ccc;
+      display: flex;
+    }
+
+    .chat-form textarea {
+      flex: 1;
+      border: none;
+      border-radius: 20px;
+      padding: 10px 15px;
+      resize: none;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .chat-form button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin-left: 10px;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+
+    .back-button {
+      font-size: 20px;
+      color: #007bff;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    /* Responsive Styles */
+    @media (max-width: 900px) {
+      .messaging-app {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .inbox-panel {
+        width: 100%;
+        height: 40vh;
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .chat-panel {
+        width: 100%;
+        height: 60vh;
+      }
+
+      .message {
+        max-width: 80%;
+      }
+
+      .chat-header .avatar {
+        width: 35px;
+        height: 35px;
+      }
+
+      .chat-header .username {
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .chat-form {
+        padding: 5px;
+      }
+
+      .chat-form textarea {
+        font-size: 12px;
+        padding: 8px 12px;
+      }
+
+      .chat-form button {
+        padding: 8px 16px;
+      }
+      .messaging-app {
+
+        height: 85vh;
+
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="messaging-app container mt-4">
+    <div class="chat-panel">
+      <div class="chat-header">
+        <a href="#" id="backButton" class="back-button">&larr; Retour</a>
+        <img src="{% if recipient.profile_picture %}{{ recipient.profile_picture.url }}{% else %}https://placehold.co/120x120{% endif %}" class="avatar" />
+        <span class="username">{{ recipient.username }}</span>
+      </div>
+
+      <div class="messages" id="messages">
+        {% regroup messages by timestamp.date as date_groups %}
+        {% for group in date_groups %}
+        <div class="date-separator">
+          {% if group.grouper == today %}
+            Aujourd'hui
+          {% elif group.grouper == yesterday %}
+            Hier
+          {% else %}
+            {{ group.grouper|date:"d M Y" }}
+          {% endif %}
+        </div>
+        {% for message in group.list %}
+        <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}">
+          <p>{{ message.content }}</p>
+          <span class="timestamp">{{ message.timestamp|date:"H:i" }}</span>
+        </div>
+        {% endfor %}
+        {% endfor %}
+      </div>
+
+      <form method="POST" class="chat-form" id="chatForm">
+        {% csrf_token %}
+        <textarea name="content" id="messageInput" placeholder="Écrire un message..." rows="1" required></textarea>
+        <button type="submit">Envoyer</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const msgContainer = document.getElementById("messages");
+
+    function scrollToBottom() {
+      msgContainer.scrollTop = msgContainer.scrollHeight;
+    }
+
+    window.onload = function () {
+      history.pushState(null, null, window.location.href);
+      scrollToBottom();
     };
 
-    // Quand un nouveau message est ajouté (par exemple après un envoi)
-    document.querySelector('.chat-form').addEventListener('submit', function() {
-        setTimeout(scrollToBottom, 100); // Attente d'un court délai pour assurer que le message est ajouté
+    document.querySelector(".chat-form").addEventListener("submit", function () {
+      setTimeout(scrollToBottom, 100);
     });
 
-    // Intercepter le retour arrière du navigateur et rediriger vers l'inbox
-    window.addEventListener('popstate', function(event) {
-        window.location.href = "{% url 'inbox' %}";
+    window.addEventListener("popstate", function () {
+      window.location.href = "{% url 'inbox' %}";
     });
 
-    // Bouton retour personnalisé
-    document.getElementById('backButton').addEventListener('click', function(e) {
-        e.preventDefault();
-        window.location.href = "{% url 'inbox' %}";
+    document.getElementById("backButton").addEventListener("click", function (e) {
+      e.preventDefault();
+      window.location.href = "{% url 'inbox' %}";
     });
 
-    // Gestion du bouton retour physique (Android/iOS)
-    document.addEventListener('backbutton', function() {
-        window.location.href = "{% url 'inbox' %}";
+    document.addEventListener("backbutton", function () {
+      window.location.href = "{% url 'inbox' %}";
     });
+
+    document.getElementById("chatForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const textarea = document.getElementById("messageInput");
+      const message = textarea.value.trim();
+
+      if (message === "") return;
+
+      fetch("", {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": "{{ csrf_token }}",
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          content: message,
+        }),
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error("Erreur lors de l'envoi.");
+          return response.text();
+        })
+        .then((data) => {
+          const msgHTML = `
+            <div class="message sent">
+              <p>${message}</p>
+              <span class="timestamp">Maintenant</span>
+            </div>
+          `;
+          document.getElementById("messages").insertAdjacentHTML("beforeend", msgHTML);
+          textarea.value = "";
+          scrollToBottom();
+        })
+        .catch((error) => {
+          console.error("Erreur :", error);
+          alert("Le message n'a pas pu être envoyé.");
+        });
+    });
+  </script>
+
+<script>
+        const chatSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/chat/'
+        );
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            document.getElementById("chatBox").innerHTML += "<p>" + data.message + "</p>";
+        };
+
+        function sendMessage() {
+            const message = document.getElementById("messageInput").value;
+            chatSocket.send(JSON.stringify({'message': message}));
+            document.getElementById("messageInput").value = '';
+        }
 </script>
 </body>
 </html>

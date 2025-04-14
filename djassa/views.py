@@ -48,6 +48,22 @@ def login_view(request):
         form = LoginForm()
     return render(request, 'djassa/connexion.html', {'form': form})
 
+def loginuser_view(request):
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            password = form.cleaned_data['mot_de_passe']
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                return redirect('accueil')
+            else:
+                messages.error(request, "Nom d’utilisateur ou mot de passe invalide.")
+    else:
+        form = LoginForm()
+    return render(request, 'djassa/loginuser.html', {'form': form})
+
 
 @csrf_exempt
 def marquer_publications_vues(request):
@@ -91,6 +107,43 @@ def accueil_view(request):
         'comments': comments,
     }
     return render(request, 'djassa/djassaman/accuiel.html', context)
+
+def accueilogin_view(request):
+    user = request.user
+
+    # Si l'utilisateur n'est pas connecté
+    if not user.is_authenticated:
+        # Pas de publications vues ni de filtrage spécifique
+        publications = Publication.objects.all().order_by('created_at')
+        follow_status = {}
+        comments = {}
+
+        for publication in publications:
+            follow_status[publication.id] = False
+            comments[publication.id] = list(Comment.objects.filter(publication=publication))
+
+    else:
+        # L'utilisateur est connecté
+        publications_vues_ids = user.publications_vues.values_list('id', flat=True)
+
+        publications = Publication.objects.exclude(author=user).exclude(id__in=publications_vues_ids).order_by('created_at')
+
+        follow_status = {}
+        comments = {}
+
+        for publication in publications:
+            is_following = Follow.objects.filter(follower=user, following=publication.author).exists()
+            follow_status[publication.id] = is_following
+            comments[publication.id] = list(Comment.objects.filter(publication=publication))
+
+    context = {
+        'publications': publications,
+        'follow_status': follow_status,
+        'comments': comments,
+    }
+
+    return render(request, 'djassa/djassaman/accueilogin.html', context)
+
 
 
 @login_required(login_url='/login/')
@@ -141,6 +194,22 @@ def profilepublication_view(request, user_id):
         'is_following': is_following,
 
     })
+
+def profileuser_view(request, user_id):
+    viewuser = get_object_or_404(CustomUser, id=user_id)
+    user_publications = Publication.objects.filter(author=viewuser).order_by('-created_at')
+
+    is_following = False
+    if request.user.is_authenticated:
+        is_following = Follow.objects.filter(follower=request.user, following=viewuser).exists()
+
+    return render(request, 'djassa/djassaman/profileuser.html', {
+        'viewuser': viewuser,
+        'user_publications': user_publications,
+        'is_following': is_following,
+    })
+
+
 @login_required(login_url='/login/')
 def logout_view(request):
     logout(request)
@@ -291,9 +360,11 @@ def unsubscribe_view(request, user_id):
 
 
 
-@login_required
 def page_de_vente(request):
     return render(request, 'djassa/djassaman/djassa.html')
+
+def ventuser(request):
+    return render(request, 'djassa/djassaman/ventuser.html')
 
 @login_required
 def enregistrer_demande(request):
@@ -511,6 +582,7 @@ def recherche_ajax(request):
         return JsonResponse(data)
     return JsonResponse({'publications': [], 'users': [], 'demandes': []})
 
+@login_required
 def recherche_resultats(request):
     query = request.GET.get('q', '')
     publications = []
@@ -542,6 +614,35 @@ def recherche_resultats(request):
     })
 
 
+def rechercheuser(request):
+    query = request.GET.get('q', '')
+    publications = []
+    users = []
+    demandes = []
+
+    if query:
+        publications = Publication.objects.filter(
+            Q(nom_du_produit__icontains=query) |
+            Q(content__icontains=query)
+        )
+
+        users = CustomUser.objects.filter(
+            Q(username__icontains=query) |
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query)
+        )
+
+        demandes = Demande.objects.filter(
+            Q(nom_du_produit__icontains=query) |
+            Q(description__icontains=query)
+        )
+
+    return render(request, 'djassa/djassaman/rechercheuser.html', {
+        'query': query,
+        'publications': publications,
+        'users': users,
+        'demandes': demandes,
+    })
 
 def notifications_view(request):
     notifications = Notification.objects.filter(user=request.user).order_by('-created_at')

@@ -1,25 +1,24 @@
-{% extends 'djassa/djassaman/base.html' %}
+{% extends 'djassa/djassaman/baselogin.html' %}
 {% load custom_filters %}
 
 {% block accueil %}active{% endblock %}
 {% block content %}
 <main class="container mt-4">
     <div class="container">
-        <h3>Bienvenue, {{ user.first_name }}!</h3>
-        <a href="{% url 'publication' %}" class="btn btn-primary" id="new-post-btn">Faire une Publication</a>
+        <a href="{% url 'login' %}" class="btn btn-primary" id="new-post-btn">Faire une Publication</a>
         <div class="mt-4" id="publications-container">
             {% for publication in publications %}
                 <div class="card post-card" data-publication-id="{{ publication.id }}" id="post-{{ publication.id }}">
                     <div class="card-body">
                         <div class="d-flex align-items-center mb-3">
-                            <a href="{% url 'profilepublication' publication.author.id %}">
+                            <a href="{% url 'profileuser' publication.author.id %}">
                                 <img src="{% if publication.author.profile_picture %}{{ publication.author.profile_picture.url }}{% else %}https://placehold.co/120x120{% endif %}"
                                      class="rounded-circle"
                                      style="width: 50px; height: 50px; object-fit: cover;"
                                      loading="lazy">
                             </a>
                             <div class="ml-3">
-                                <a href="{% url 'profilepublication' publication.author.id %}">
+                                <a href="{% url 'profileuser' publication.author.id %}">
                                     <h6 class="mb-0">{{ publication.author.first_name }} {{ publication.author.last_name }}</h6>
                                 </a>
                                 <small class="text-muted">{{ publication.created_at|date:"d M Y, H:i" }}</small>
@@ -49,7 +48,7 @@
                                data-likes-count="{{ publication.likes.count }}">
                                 <i class="fas fa-thumbs-up"></i> <span class="like-count">{{ publication.likes.count }}</span>
                             </a>
-                            <a href="{% url 'page_commentaire' publication.id %}" class="text-primary ml-3 comment-link"><i class="fas fa-comment"></i> <span class="comment-count">{{ publication.comments.count }}</span></a>
+                            <a href="{% url 'loginuser'  %}" class="text-primary ml-3 comment-link"><i class="fas fa-comment"></i> <span class="comment-count">{{ publication.comments.count }}</span></a>
                             <a href="javascript:void(0);" class="text-primary ml-3 share-btn" data-publication-id="{{ publication.id }}"><i class="fas fa-share-alt"></i> <span class="share-count">{{ publication.shares.count }}</span></a>
                             <a href="javascript:void(0);" class="text-primary ml-3 phone-btn" data-phone="{{ publication.author.phone_number }}"><i class="fas fa-phone"></i></a>
                             <a href="mailto:{{ publication.author.email }}" class="text-primary ml-3"><i class="fas fa-envelope"></i></a>

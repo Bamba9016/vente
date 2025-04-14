@@ -1,0 +1,27 @@
+{% extends 'djassa/djassaman/baselogin.html' %}
+
+{% block titre %}
+    Enregistrer une demande
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Créer une nouvelle demande</h1>
+
+    <form method="post" class="shadow p-4 bg-white rounded">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        {{ form.as_p }}
+
+        <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary">Soumettre</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
