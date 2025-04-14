@@ -114,7 +114,7 @@ def accueilogin_view(request):
     # Si l'utilisateur n'est pas connecté
     if not user.is_authenticated:
         # Pas de publications vues ni de filtrage spécifique
-        publications = Publication.objects.all().order_by('created_at')
+        publications = Publication.objects.all().order_by('?')
         follow_status = {}
         comments = {}
 

@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <a class="nav-link" href="{% url 'loginuser'  %}"><i class="fas fa-th-list"></i> Publications</a>
                 </li>
                 <li class="nav-item {% block vente %}{% endblock  %}">
-                    <a class="nav-link" href="{% url 'page_de_vente'  %}"><i class="fas fa-shopping-cart"></i> Vente</a>
+                    <a class="nav-link" href="{% url 'vente'  %}"><i class="fas fa-shopping-cart"></i> Vente</a>
                 </li>
                 <li class="nav-item {% block message %}{% endblock  %}">
                     <a class="nav-link" href="{% url 'loginuser' %}"><i class="fas fa-comments"></i> Messagerie</a>
@@ -295,7 +295,7 @@ document.addEventListener('DOMContentLoaded', function () {
 <nav class="bottom-navbar d-lg-none">
     <a href="{% url 'accueilogin'  %}" class="nav-link"><i class="fas fa-home"></i></a>
     <a href="{% url 'loginuser'  %}" class="nav-link"><i class="fas fa-th-list"></i></a>
-    <a href="{% url 'page_de_vente'  %}" class="nav-link"><i class="fas fa-shopping-cart"></i></a>
+    <a href="{% url 'vente'  %}" class="nav-link"><i class="fas fa-shopping-cart"></i></a>
     <a href="{% url 'loginuser' %}" class="nav-link"><i class="fas fa-comments"></i></a>
     <a href="#" class="nav-link"><i class="fas fa-bell"></i></a>
 </nav>

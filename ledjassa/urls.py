@@ -32,7 +32,7 @@ path('subscribe/<int:user_id>/', views.subscribe_view, name='subscribe'),
 
 path('accueil/unsubscribe/<int:user_id>/', views.unsubscribe_view, name='unsubscribe'),
 path('accueil/vente/', views.page_de_vente, name='page_de_vente'),
-path('vente/', views.ventuser, name='page_de_vente'),
+path('vente/', views.ventuser, name='vente'),
 
     path('enregistrer-demande/', views.enregistrer_demande, name='enregistrer_demande'),
     path('categories/', views.choisir_categorie, name='choisir_categorie'),
