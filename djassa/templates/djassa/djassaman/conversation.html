@@ -351,20 +351,79 @@
   </script>
 
 <script>
-        const chatSocket = new WebSocket(
-            'ws://' + window.location.host + '/ws/chat/'
-        );
+    const msgContainer = document.getElementById("messages");
 
-        chatSocket.onmessage = function(e) {
-            const data = JSON.parse(e.data);
-            document.getElementById("chatBox").innerHTML += "<p>" + data.message + "</p>";
-        };
+    function scrollToBottom() {
+      msgContainer.scrollTop = msgContainer.scrollHeight;
+    }
 
-        function sendMessage() {
-            const message = document.getElementById("messageInput").value;
-            chatSocket.send(JSON.stringify({'message': message}));
-            document.getElementById("messageInput").value = '';
-        }
+    window.onload = function () {
+      history.pushState(null, null, window.location.href);
+      scrollToBottom();
+    };
+
+    document.querySelector(".chat-form").addEventListener("submit", function () {
+      setTimeout(scrollToBottom, 100);
+    });
+
+    window.addEventListener("popstate", function () {
+      window.location.href = "{% url 'inbox' %}";
+    });
+
+    document.getElementById("backButton").addEventListener("click", function (e) {
+      e.preventDefault();
+      window.location.href = "{% url 'inbox' %}";
+    });
+
+    document.addEventListener("backbutton", function () {
+      window.location.href = "{% url 'inbox' %}";
+    });
+
+    document.getElementById("chatForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const textarea = document.getElementById("messageInput");
+      const message = textarea.value.trim();
+
+      if (message === "") return;
+
+      // Envoi du message via WebSocket
+      chatSocket.send(JSON.stringify({'message': message}));
+
+      // Affichage du message envoyé dans la conversation
+      const msgHTML = `
+        <div class="message sent">
+          <p>${message}</p>
+          <span class="timestamp">Maintenant</span>
+        </div>
+      `;
+      document.getElementById("messages").insertAdjacentHTML("beforeend", msgHTML);
+      textarea.value = "";
+      scrollToBottom();
+    });
+
+    // Connexion WebSocket
+    const chatSocket = new WebSocket(
+        'ws://' + window.location.host + '/ws/chat/{{ recipient.username }}/'
+    );
+
+    // Réception de message via WebSocket
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const msgHTML = `
+          <div class="message received">
+            <p>${data.message}</p>
+            <span class="timestamp">${data.timestamp}</span>
+          </div>
+        `;
+        document.getElementById("messages").insertAdjacentHTML("beforeend", msgHTML);
+        scrollToBottom();
+    };
+
+    // Gestion de la fermeture de la connexion WebSocket lorsque la page est fermée
+    window.onbeforeunload = function () {
+        chatSocket.close();
+    };
 </script>
+
 </body>
 </html>

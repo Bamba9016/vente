@@ -245,16 +245,16 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item {% block accueil %}{% endblock  %}">
-                    <a class="nav-link" href="{% url 'accueilogin'  %}"><i class="fas fa-home"></i> Accueil</a>
+                    <a class="nav-link" href="{% url 'accueilogin'  %}" data-ajax="true"><i class="fas fa-home"></i> Accueil</a>
                 </li>
                 <li class="nav-item {% block publication %}{% endblock  %}">
-                    <a class="nav-link" href="{% url 'loginuser'  %}"><i class="fas fa-th-list"></i> Publications</a>
+                    <a class="nav-link" href="{% url 'loginuser'  %}" data-ajax="true"><i class="fas fa-th-list"></i> Publications</a>
                 </li>
                 <li class="nav-item {% block vente %}{% endblock  %}">
-                    <a class="nav-link" href="{% url 'vente'  %}"><i class="fas fa-shopping-cart"></i> Vente</a>
+                    <a class="nav-link" href="{% url 'vente'  %}" data-ajax="true"><i class="fas fa-shopping-cart"></i> Vente</a>
                 </li>
                 <li class="nav-item {% block message %}{% endblock  %}">
-                    <a class="nav-link" href="{% url 'loginuser' %}"><i class="fas fa-comments"></i> Messagerie</a>
+                    <a class="nav-link" href="{% url 'loginuser' %} " data-ajax="true"><i class="fas fa-comments"></i> Messagerie</a>
                 </li>
 
             </ul>
@@ -268,6 +268,8 @@ document.addEventListener('DOMContentLoaded', function () {
 </form>
 
         </div>
+            <a class="nav-link" href="{% url 'loginuser' %}"><i class="fas fa-sign-in-alt"></i> Connexion</a>
+
     </nav>
 
 
@@ -281,16 +283,20 @@ document.addEventListener('DOMContentLoaded', function () {
         <div id="search-results" class="list-group position-absolute" style="z-index: 1000; width: 100%; display: none;"></div>
     </div>
 </form>
-
+<a class="nav-link" href="{% url 'loginuser' %}"><i class="fas fa-sign-in-alt"></i> Connexion</a>
 
         </div>
+
+
     </nav>
 </header>
 
-
-    {% block content %}{% endblock %}
-
-
+<!-- Contenu principal -->
+<div id="main-content" class="container mt-4">
+    {% block content %}
+    <!-- Contenu injecté ici dynamiquement -->
+    {% endblock %}
+</div>
 <!-- Bottom navbar for mobile -->
 <nav class="bottom-navbar d-lg-none">
     <a href="{% url 'accueilogin'  %}" class="nav-link"><i class="fas fa-home"></i></a>
@@ -308,46 +314,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const links = document.querySelectorAll('.navbar-nav a'); // Sélectionner les liens dans la navbar
 
-    links.forEach(link => {
-        link.addEventListener('click', function (event) {
-            event.preventDefault(); // Empêcher le rechargement de la page
-
-            const url = this.getAttribute('href'); // Récupérer l'URL du lien cliqué
-            const title = this.textContent; // Récupérer le titre du lien pour l'historique
-
-            // Mettre à jour l'URL dans la barre d'adresse sans rafraîchir la page
-            history.pushState({ path: url }, title, url);
-
-            // Charger dynamiquement le contenu de la page via fetch
-            fetch(url)
-                .then(response => response.text())
-                .then(data => {
-                    // Remplacer le contenu de la page sans recharger
-                    document.querySelector('body').innerHTML = data;
-                })
-                .catch(err => console.error('Erreur lors du chargement du contenu:', err));
-        });
-    });
-
-    // Lorsque l'utilisateur utilise les boutons de navigation du navigateur
-    window.addEventListener('popstate', function (event) {
-        if (event.state) {
-            const url = event.state.path;
-
-            // Recharger dynamiquement le contenu à partir de l'URL
-            fetch(url)
-                .then(response => response.text())
-                .then(data => {
-                    document.querySelector('body').innerHTML = data;
-                })
-                .catch(err => console.error('Erreur lors du chargement du contenu:', err));
-        }
-    });
-});
 </script>
 
 
