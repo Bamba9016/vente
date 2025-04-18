@@ -1,6 +1,9 @@
+import datetime
 import json
 import logging
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db import transaction
@@ -9,8 +12,9 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import authenticate, login, update_session_auth_hash, logout
+from django.contrib.auth import authenticate, login, update_session_auth_hash, logout, get_user_model
 from django.contrib import messages
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
@@ -257,28 +261,40 @@ def publication_list(request):
 def publication_detail(request, publication_id):
     publication = get_object_or_404(Publication, id=publication_id)
     return render(request, 'djassa/djassaman/publication_detail.html', {'publication': publication})
+
+@require_POST
 @login_required
 def like_publication(request, publication_id):
-    publication = get_object_or_404(Publication, id=publication_id)
-    like_exists = Like.objects.filter(publication=publication, user=request.user).exists()
+    if not request.user.is_authenticated:
+        return JsonResponse({'status': 'error', 'message': 'Authentification requise'}, status=401)
 
-    if like_exists:
-        Like.objects.filter(publication=publication, user=request.user).delete()
+    publication = get_object_or_404(Publication, id=publication_id)
+
+    # Support JSON et x-www-form-urlencoded
+    if request.content_type == 'application/json':
+        try:
+            body = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': 'Données invalides'}, status=400)
+    else:
+        body = request.POST
+
+    # Like ou Unlike
+    like_obj = Like.objects.filter(publication=publication, user=request.user)
+    if like_obj.exists():
+        like_obj.delete()
         liked = False
     else:
         Like.objects.create(publication=publication, user=request.user)
         liked = True
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'status': 'success',
-                'likes_count': publication.likes.count()
-            })
-        return redirect(request.POST.get('next', 'accueil'))
 
+    likes_count = publication.likes.count()
 
-    # Redirection pour les requêtes classiques
-    next_url = request.GET.get('next', 'accueil')
-    return redirect(next_url)
+    return JsonResponse({
+        'status': 'success',
+        'liked': liked,
+        'likes_count': likes_count
+    })
 
 
 @login_required
@@ -445,57 +461,63 @@ def viewamis_view(request, viewuser_id):
 
 @login_required
 def inbox(request):
-    """Afficher la liste des conversations de l'utilisateur"""
     conversations = Message.objects.filter(
         Q(sender=request.user) | Q(recipient=request.user)
     ).order_by('-timestamp')
 
     users_data = {}
+
     for msg in conversations:
-        # L'autre utilisateur dans la conversation
         other = msg.recipient if msg.sender == request.user else msg.sender
 
-        # On ignore l'utilisateur connecté
-        if other != request.user:
-            if other not in users_data:
-                last_message = msg
-                unread_count = Message.objects.filter(sender=other, recipient=request.user, is_read=False).count()
-                users_data[other] = {
-                    'user': other,
-                    'last_message': last_message,
-                    'unread_count': unread_count
-                }
+        if other == request.user:
+            continue
 
-    # Récupérer les utilisateurs sans l'utilisateur connecté
+        # Met à jour uniquement si c'est un message plus récent
+        if other not in users_data or msg.timestamp > users_data[other]['last_message'].timestamp:
+            unread_count = Message.objects.filter(sender=other, recipient=request.user, is_read=False).count()
+            users_data[other] = {
+                'user': other,
+                'last_message': msg,
+                'unread_count': unread_count
+            }
+
     return render(request, 'djassa/djassaman/inbox.html', {'users': users_data.values()})
 
-@login_required
-def conversation(request, user_id):
-    """Afficher une conversation entre deux utilisateurs"""
-    recipient = get_object_or_404(CustomUser, id=user_id)
+User = get_user_model()
 
-    # Récupérer les messages entre l'utilisateur connecté et le destinataire
+@login_required # Assurez-vous que l'utilisateur est connecté
+def private_chat_view(request, user_id):
+    recipient = get_object_or_404(User, pk=user_id)
+    current_user = request.user
+
+    # Empêcher un utilisateur de discuter avec lui-même (optionnel)
+    if recipient == current_user:
+        # Rediriger ou afficher une erreur
+        # return redirect('inbox') # exemple
+        return render(request, 'error_page.html', {'message': "Vous ne pouvez pas discuter avec vous-même."})
+
+
+    # Récupérer l'historique des messages entre les deux utilisateurs
     messages = Message.objects.filter(
-        (Q(sender=request.user, recipient=recipient) |
-         Q(sender=recipient, recipient=request.user))
-    ).order_by('timestamp')
+        (Q(sender=current_user) & Q(recipient=recipient)) | \
+        (Q(sender=recipient) & Q(recipient=current_user))
+    ).order_by('timestamp') # Triés du plus ancien au plus récent
 
-    # Marquer les messages comme lus
-    messages.filter(recipient=request.user, is_read=False).update(is_read=True)
+    # Pour l'affichage des dates "Aujourd'hui", "Hier"
+    today = timezone.now().date()
+    yesterday = today - datetime.timedelta(days=1)
 
-    # Si le formulaire est soumis (pour envoyer un message)
-    if request.method == "POST":
-        form = MessageForm(request.POST)
-        if form.is_valid():
-            message = form.save(commit=False)
-            message.sender = request.user
-            message.recipient = recipient
-            message.save()
-            return redirect('conversation', user_id=recipient.id)
-    else:
-        form = MessageForm()
+    context = {
+        'recipient': recipient,
+        'messages': messages,
+        'current_user_id': current_user.id, # ID de l'utilisateur actuel pour JS
+        'today': today,
+        'yesterday': yesterday,
+    }
+    return render(request, 'djassa/djassaman/private.html', context) # Nom de votre template
 
-    return render(request, 'djassa/djassaman/conversation.html', {'recipient': recipient, 'messages': messages, 'form': form})
+
 
 @login_required(login_url='/login/')
 def parametres_view(request):
@@ -652,3 +674,13 @@ def notifications_view(request):
         'unread_count': unread_count
     })
 
+
+def notify_user(user_id, message_data):
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f"user_{user_id}",
+        {
+            "type": "send_notification",
+            "notification": message_data
+        }
+    )

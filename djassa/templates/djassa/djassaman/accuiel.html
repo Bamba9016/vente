@@ -305,6 +305,48 @@ document.querySelectorAll('.like-btn').forEach((btn) => {
 });
 </script>
 
+<script>
+    // Récupérer le nom d'utilisateur du destinataire
+    const recipientUsername = "{{ recipient.username }}";  // Nom d'utilisateur du destinataire
+    const userId = {{ user.id }};  // L'utilisateur authentifié
+
+    // Connexion WebSocket pour la conversation
+    const chatSocket = new WebSocket(
+        `ws://${window.location.host}/ws/chat/${recipientUsername}/`
+    );
+
+    // Recevoir les messages du serveur
+    socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        const likeCountElement = document.querySelector(`#likes-count-${publicationId}`);
+
+        // Met à jour l'UI
+        likeCountElement.textContent = data.likes_count;
+
+        // Mise à jour de l'état du bouton "Like"
+        const likeButton = document.querySelector(`.like-btn[data-publication-id="${publicationId}"]`);
+        if (data.liked) {
+            likeButton.classList.add('text-success');
+        } else {
+            likeButton.classList.remove('text-success');
+        }
+    };
+
+    // Fonction pour envoyer un "like" ou "unlike"
+    function toggleLike() {
+        const likeButton = document.querySelector(`.like-btn[data-publication-id="${publicationId}"]`);
+        likeButton.classList.toggle('text-success');
+
+        // Envoyer les données au serveur via WebSocket
+        socket.send(JSON.stringify({
+            'user_id': userId  // Envoyer l'ID de l'utilisateur qui a cliqué
+        }));
+    }
+
+    // Ajouter un écouteur d'événement pour le bouton "Like"
+    document.querySelector('.like-btn[data-publication-id="' + publicationId + '"]').addEventListener('click', toggleLike);
+</script>
+
 
 
 {% endblock %}

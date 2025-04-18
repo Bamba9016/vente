@@ -283,147 +283,94 @@
   </div>
 
   <script>
+    // Récupère le conteneur des messages
     const msgContainer = document.getElementById("messages");
 
+    // Fonction pour faire défiler le conteneur des messages jusqu'en bas
     function scrollToBottom() {
       msgContainer.scrollTop = msgContainer.scrollHeight;
     }
 
+    // Quand la page est chargée, ajouter l'URL dans l'historique et faire défiler jusqu'en bas
     window.onload = function () {
-      history.pushState(null, null, window.location.href);
-      scrollToBottom();
+      history.pushState(null, null, window.location.href);  // Empêche l'historique de revenir en arrière dans le navigateur
+      scrollToBottom();  // Fait défiler la page vers le bas
     };
 
+    // Ajouter un événement au formulaire de chat pour défiler après l'envoi d'un message
     document.querySelector(".chat-form").addEventListener("submit", function () {
-      setTimeout(scrollToBottom, 100);
+      setTimeout(scrollToBottom, 100);  // Attendre un peu avant de défiler (évite le défilement brusque)
     });
 
+    // Redirection de la page vers l'inbox si l'utilisateur appuie sur le bouton "back" du navigateur
     window.addEventListener("popstate", function () {
-      window.location.href = "{% url 'inbox' %}";
+      window.location.href = "{% url 'inbox' %}";  // Redirige vers la page de l'inbox
     });
 
+    // Gérer le clic sur le bouton "back" de la conversation pour revenir à l'inbox
     document.getElementById("backButton").addEventListener("click", function (e) {
-      e.preventDefault();
-      window.location.href = "{% url 'inbox' %}";
+      e.preventDefault();  // Empêche l'action par défaut (retour arrière dans le navigateur)
+      window.location.href = "{% url 'inbox' %}";  // Redirige vers la page de l'inbox
     });
 
+    // Gérer l'événement "backbutton" (sur les appareils mobiles, par exemple)
     document.addEventListener("backbutton", function () {
-      window.location.href = "{% url 'inbox' %}";
+      window.location.href = "{% url 'inbox' %}";  // Redirige vers l'inbox
     });
 
+    // Ajoute un événement au formulaire pour envoyer le message via HTTP (POST)
     document.getElementById("chatForm").addEventListener("submit", function (e) {
-      e.preventDefault();
-      const textarea = document.getElementById("messageInput");
-      const message = textarea.value.trim();
+      e.preventDefault();  // Empêche la soumission du formulaire classique
 
+      // Récupère le texte du message
+      const textarea = document.getElementById("messageInput");
+      const message = textarea.value.trim();  // Nettoie les espaces inutiles
+
+      // Si le message est vide, on ne fait rien
       if (message === "") return;
 
+      // Envoi du message via une requête POST (en utilisant fetch API)
       fetch("", {
-        method: "POST",
+        method: "POST",  // Méthode POST pour envoyer les données
         headers: {
-          "X-CSRFToken": "{{ csrf_token }}",
-          "Content-Type": "application/x-www-form-urlencoded",
+          "X-CSRFToken": "{{ csrf_token }}",  // Ajoute le token CSRF pour la sécurité
+          "Content-Type": "application/x-www-form-urlencoded",  // Spécifie le type de contenu
         },
         body: new URLSearchParams({
-          content: message,
+          content: message,  // Données envoyées (le contenu du message)
         }),
       })
         .then((response) => {
+          // Si la réponse n'est pas correcte, on lance une erreur
           if (!response.ok) throw new Error("Erreur lors de l'envoi.");
-          return response.text();
+          return response.text();  // Retourne la réponse sous forme de texte
         })
         .then((data) => {
+          // Crée le HTML pour afficher le message envoyé
           const msgHTML = `
             <div class="message sent">
               <p>${message}</p>
               <span class="timestamp">Maintenant</span>
             </div>
           `;
+          // Insère le message dans le conteneur de messages
           document.getElementById("messages").insertAdjacentHTML("beforeend", msgHTML);
-          textarea.value = "";
-          scrollToBottom();
+          textarea.value = "";  // Vide le champ de texte
+          scrollToBottom();  // Fait défiler jusqu'en bas pour afficher le dernier message
         })
         .catch((error) => {
+          // En cas d'erreur lors de l'envoi, affiche une alerte
           console.error("Erreur :", error);
           alert("Le message n'a pas pu être envoyé.");
         });
     });
-  </script>
-
-<script>
-    const msgContainer = document.getElementById("messages");
-
-    function scrollToBottom() {
-      msgContainer.scrollTop = msgContainer.scrollHeight;
-    }
-
-    window.onload = function () {
-      history.pushState(null, null, window.location.href);
-      scrollToBottom();
-    };
-
-    document.querySelector(".chat-form").addEventListener("submit", function () {
-      setTimeout(scrollToBottom, 100);
-    });
-
-    window.addEventListener("popstate", function () {
-      window.location.href = "{% url 'inbox' %}";
-    });
-
-    document.getElementById("backButton").addEventListener("click", function (e) {
-      e.preventDefault();
-      window.location.href = "{% url 'inbox' %}";
-    });
-
-    document.addEventListener("backbutton", function () {
-      window.location.href = "{% url 'inbox' %}";
-    });
-
-    document.getElementById("chatForm").addEventListener("submit", function (e) {
-      e.preventDefault();
-      const textarea = document.getElementById("messageInput");
-      const message = textarea.value.trim();
-
-      if (message === "") return;
-
-      // Envoi du message via WebSocket
-      chatSocket.send(JSON.stringify({'message': message}));
-
-      // Affichage du message envoyé dans la conversation
-      const msgHTML = `
-        <div class="message sent">
-          <p>${message}</p>
-          <span class="timestamp">Maintenant</span>
-        </div>
-      `;
-      document.getElementById("messages").insertAdjacentHTML("beforeend", msgHTML);
-      textarea.value = "";
-      scrollToBottom();
-    });
-
-    // Connexion WebSocket
-    const chatSocket = new WebSocket(
-        'ws://' + window.location.host + '/ws/chat/{{ recipient.username }}/'
-    );
-
-    // Réception de message via WebSocket
-    chatSocket.onmessage = function(e) {
-        const data = JSON.parse(e.data);
-        const msgHTML = `
-          <div class="message received">
-            <p>${data.message}</p>
-            <span class="timestamp">${data.timestamp}</span>
-          </div>
-        `;
-        document.getElementById("messages").insertAdjacentHTML("beforeend", msgHTML);
-        scrollToBottom();
-    };
-
-    // Gestion de la fermeture de la connexion WebSocket lorsque la page est fermée
-    window.onbeforeunload = function () {
-        chatSocket.close();
-    };
 </script>
+
+
+
+
+
+
 
 </body>
 </html>

@@ -11,15 +11,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <style>
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
             margin: 0;
-            padding: 0 10px;
+            padding: 56px 10px 0 10px; /* Top padding to avoid navbar overlap */
             box-sizing: border-box;
-            padding-top: 56px; /* Ajouter un padding top pour éviter que la navbar cache le contenu */
-
         }
 
        .navbar {
@@ -337,8 +331,9 @@ document.addEventListener('DOMContentLoaded', function () {
 </header>
 
 
-    {% block content %}{% endblock %}
-
+ <section id="acontent">  <!-- Ajout de l'ID content ici -->
+        {% block content %}{% endblock %}
+ </section>
 
 <!-- Bottom navbar for mobile -->
 <nav class="bottom-navbar d-lg-none">
@@ -356,6 +351,87 @@ document.addEventListener('DOMContentLoaded', function () {
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
 
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Gestion navigation AJAX
+    document.addEventListener('click', function (e) {
+        const link = e.target.closest('a');
+        if (!link || e.defaultPrevented) return;
+
+        // Ignorer les liens externes, les ancres, ou ceux avec data-ignore-spa
+        if (
+            link.href.indexOf(window.location.origin) === -1 ||
+            link.href.includes('#') ||
+            link.target === '_blank' ||
+            link.hasAttribute('data-ignore-spa')
+        ) {
+            return;
+        }
+
+        e.preventDefault();
+        history.pushState(null, null, link.href);
+        loadContent(link.href);
+    });
+
+    // Gérer les retours/arrière du navigateur
+    window.addEventListener('popstate', function () {
+        loadContent(window.location.href);
+    });
+
+    // Chargement initial si nécessaire
+    // loadContent(window.location.href);
+});
+
+// Fonction pour charger dynamiquement le contenu
+function loadContent(url) {
+    const path = new URL(url).pathname;
+    const contentContainer = document.getElementById('acontent');
+
+    // Affiche un spinner pendant le chargement
+    contentContainer.innerHTML = '<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-3x"></i></div>';
+
+    fetch(path, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => {
+        if (!response.ok) throw new Error("HTTP error " + response.status);
+        return response.text();
+    })
+    .then(html => {
+        // Parse le HTML et extrait les scripts
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newContent = doc.getElementById('acontent');
+        if (newContent) {
+            contentContainer.innerHTML = newContent.innerHTML;
+
+            // Recharge les <script> inclus dans le nouveau contenu
+            const scripts = newContent.querySelectorAll('script');
+            scripts.forEach(oldScript => {
+                const newScript = document.createElement('script');
+                if (oldScript.src) {
+                    newScript.src = oldScript.src;
+                } else {
+                    newScript.textContent = oldScript.textContent;
+                }
+                document.body.appendChild(newScript);
+                oldScript.remove(); // optionnel
+            });
+
+            window.scrollTo(0, 0);
+        } else {
+            window.location.href = url; // fallback si erreur
+        }
+    })
+    .catch(error => {
+        console.error('Erreur AJAX:', error);
+        window.location.href = url;
+    });
+}
+</script>
 
 
 

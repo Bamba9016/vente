@@ -105,10 +105,10 @@
         <h5 class="mb-0">Commentaires pour : {{ publication.nom_du_produit }}</h5>
         <a href="{% url 'accueil' %}" class="btn-close">&times;</a>
     </div>
-    <div class="comments-body">
+    <div class="comments-body" id="comments-container">
         {% for comment in comments %}
             {% if not comment.parent_comment %}
-                <div class="comment" id="comment-{{ comment.id }}">
+                <div class="comment" id="comment-{{ comment.id }}" data-comment-id="{{ comment.id }}">
                     <div class="avatar">
                         <a href="{% url 'profilepublication' comment.user.id %}">
                             <img src="{% if comment.user.profile_picture %}{{ comment.user.profile_picture.url }}{% else %}https://placehold.co/120x120{% endif %}" alt="Avatar">
@@ -120,11 +120,8 @@
                             <span class="reply-btn" onclick="toggleReplyForm({{ comment.id }})">Répondre</span>
                         </div>
                         <div class="reply-form" id="replyForm-{{ comment.id }}">
-                            <form action="{% url 'reply_to_comment' comment.id %}" method="post">
-                                {% csrf_token %}
-                                <textarea name="reply" class="form-control" rows="2" placeholder="Répondre..." required></textarea>
-                                <button type="submit" class="btn btn-primary mt-2">Envoyer</button>
-                            </form>
+                            <textarea class="form-control reply-textarea" rows="2" placeholder="Répondre..." data-parent-id="{{ comment.id }}" required></textarea>
+                            <button class="btn btn-primary mt-2 send-reply-btn" data-parent-id="{{ comment.id }}">Envoyer</button>
                         </div>
                         {% if comment.replies.count > 0 %}
                             <span class="see-replies-btn" onclick="toggleReplies({{ comment.id }}, this)">Voir les réponses</span>
@@ -150,102 +147,132 @@
             <p>Aucun commentaire pour cette publication.</p>
         {% endfor %}
     </div>
-    <form id="commentForm" method="post" action="{% url 'comment_publication' publication.id %}" class="comment-input">
+    <div class="comment-input">
         {% csrf_token %}
-        <textarea name="comment" class="form-control" rows="1" placeholder="Ajouter un commentaire..." required></textarea>
-        <button type="submit" class="btn btn-primary">Envoyer</button>
-    </form>
+        <textarea id="newComment" class="form-control" rows="1" placeholder="Ajouter un commentaire..." required></textarea>
+        <button id="submitComment" class="btn btn-primary">Envoyer</button>
+    </div>
 
 </div>
 
 <script>
-// Sauvegarder la position du scroll avant l'actualisation
-window.addEventListener('beforeunload', function() {
-    const scrollPosition = document.querySelector('.comments-body').scrollTop;
-    sessionStorage.setItem('commentScrollPosition', scrollPosition);
-});
+    const publicationId = {{ publication.id }};
+    const commentsContainer = document.getElementById('comments-container');
+    const newCommentInput = document.getElementById('newComment');
+    const submitCommentButton = document.getElementById('submitComment');
 
-// Restaurer la position du scroll après le chargement
-document.addEventListener('DOMContentLoaded', function() {
-    // Fonctions existantes...
-    toggleReplyForm = function(commentId) {
+    const commentSocket = new WebSocket(
+        'ws://' + window.location.host + '/ws/publication/' + publicationId + '/comments/'
+    );
+
+    commentSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        if (data.type === 'comment') {
+            const comment = data.comment;
+            const newCommentDiv = document.createElement('div');
+            newCommentDiv.classList.add('comment');
+            newCommentDiv.id = `comment-${comment.id}`;
+            newCommentDiv.dataset.commentId = comment.id;
+
+            const avatarDiv = document.createElement('div');
+            avatarDiv.classList.add('avatar');
+            const avatarLink = document.createElement('a');
+            avatarLink.href = comment.user.profile_url;
+            const avatarImg = document.createElement('img');
+            avatarImg.src = comment.user.profile_picture;
+            avatarImg.alt = 'Avatar';
+            avatarLink.appendChild(avatarImg);
+            avatarDiv.appendChild(avatarLink);
+            newCommentDiv.appendChild(avatarDiv);
+
+            const contentDiv = document.createElement('div');
+            contentDiv.classList.add('content');
+            contentDiv.innerHTML = `<strong>${comment.user.username}</strong> : ${comment.content}
+                <div>
+                    <span class="reply-btn" onclick="toggleReplyForm(${comment.id})">Répondre</span>
+                </div>
+                <div class="reply-form" id="replyForm-${comment.id}">
+                    <textarea class="form-control reply-textarea" rows="2" placeholder="Répondre..." data-parent-id="${comment.id}" required></textarea>
+                    <button class="btn btn-primary mt-2 send-reply-btn" data-parent-id="${comment.id}">Envoyer</button>
+                </div>
+                <div class="replies" id="replies-${comment.id}"></div>
+            `;
+            newCommentDiv.appendChild(contentDiv);
+
+            // Ajouter le nouveau commentaire en haut
+            commentsContainer.prepend(newCommentDiv);
+            attachReplyEventListeners(); // Ré-attacher les listeners pour les nouveaux éléments
+        }
+    };
+
+    commentSocket.onclose = function(e) {
+        console.error('Chat socket closed unexpectedly');
+    };
+
+    submitCommentButton.onclick = function(e) {
+        const commentContent = newCommentInput.value;
+        if (commentContent) {
+            commentSocket.send(JSON.stringify({
+                'type': 'new_comment',
+                'content': commentContent
+            }));
+            newCommentInput.value = '';
+        }
+    };
+
+    function toggleReplyForm(commentId) {
         const form = document.getElementById('replyForm-' + commentId);
         form.style.display = form.style.display === 'block' ? 'none' : 'block';
     }
 
-    toggleReplies = function(commentId, btn) {
+    function toggleReplies(commentId, btn) {
         const replies = document.getElementById('replies-' + commentId);
         replies.classList.toggle('visible');
         btn.innerText = replies.classList.contains('visible') ? 'Masquer les réponses' : 'Voir les réponses';
     }
 
-    // Restaurer la position du scroll
-    const savedPosition = sessionStorage.getItem('commentScrollPosition');
-    if (savedPosition) {
-        const commentsBody = document.querySelector('.comments-body');
-        commentsBody.scrollTop = savedPosition;
-        sessionStorage.removeItem('commentScrollPosition'); // Nettoyer après utilisation
+    function sendReply(parentId, replyContent) {
+        commentSocket.send(JSON.stringify({
+            'type': 'new_reply',
+            'content': replyContent,
+            'parent_id': parentId
+        }));
     }
 
-    // Ajout pour le scroll après soumission de formulaire
-    document.querySelectorAll('form').forEach(form => {
-        form.addEventListener('submit', function() {
+    function attachReplyEventListeners() {
+        const replyButtons = document.querySelectorAll('.send-reply-btn');
+        replyButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const parentId = this.dataset.parentId;
+                const replyTextarea = document.querySelector(`#replyForm-${parentId} .reply-textarea`);
+                if (replyTextarea && replyTextarea.value) {
+                    sendReply(parentId, replyTextarea.value);
+                    replyTextarea.value = ''; // Clear the textarea after sending
+                    const replyForm = document.getElementById(`replyForm-${parentId}`);
+                    replyForm.style.display = 'none'; // Hide the form after sending
+                }
+            });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        attachReplyEventListeners();
+
+        // Sauvegarder la position du scroll avant l'actualisation
+        window.addEventListener('beforeunload', function() {
             const scrollPosition = document.querySelector('.comments-body').scrollTop;
             sessionStorage.setItem('commentScrollPosition', scrollPosition);
         });
+
+        // Restaurer la position du scroll après le chargement
+        const savedPosition = sessionStorage.getItem('commentScrollPosition');
+        if (savedPosition) {
+            const commentsBody = document.querySelector('.comments-body');
+            commentsBody.scrollTop = savedPosition;
+            sessionStorage.removeItem('commentScrollPosition'); // Nettoyer après utilisation
+        }
     });
-});
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    // ... le reste de ton script déjà présent ...
 
-    const commentForm = document.getElementById('commentForm');
-    commentForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-
-        const formData = new FormData(commentForm);
-        const comment = formData.get('comment');
-        const csrfToken = formData.get('csrfmiddlewaretoken');
-
-        fetch(commentForm.action, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken
-            },
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                const commentsBody = document.querySelector('.comments-body');
-
-                const newCommentHTML = `
-                    <div class="comment">
-                        <div class="avatar">
-                            <a href="${data.comment.user_profile_url}">
-                                <img src="${data.comment.user_avatar}" alt="Avatar">
-                            </a>
-                        </div>
-                        <div class="content">
-                            <strong>${data.comment.username}</strong> : ${data.comment.content}
-                        </div>
-                    </div>
-                `;
-
-                commentsBody.insertAdjacentHTML('beforeend', newCommentHTML);
-                commentForm.reset();
-            } else {
-                alert('Erreur : ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Erreur lors de l\'envoi du commentaire :', error);
-        });
-    });
-});
-</script>
-<script>
     document.addEventListener('pageshow', function (event) {
         if (event.persisted || window.performance.getEntriesByType("navigation")[0].type === "back_forward") {
             window.location.href = "{% url 'accueil' %}";

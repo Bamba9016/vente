@@ -95,20 +95,21 @@
             padding: 3px 6px;
         }
     }
+
     .unread-status {
         color: red;
         font-size: 18px;
         position: absolute;
         right: 15px;
-        top: 15px;
+        top: 40px; /* un peu plus bas que l’unread-count */
     }
 
     .unread-status.read::after {
-        content: "↗↗";  /* Deux flèches pour les messages lus */
+        content: "↗↗";
     }
 
     .unread-status.unread::after {
-        content: "↗";  /* Une flèche pour les messages non lus */
+        content: "↗";
     }
 </style>
 
@@ -116,33 +117,32 @@
     <h2>Messagerie</h2>
     <ul class="user-list">
         {% for item in users %}
-    <li class="user-item">
-        <a href="{% url 'conversation' item.user.id %}" class="user-item-link">
-            <img src="{% if item.user.profile_picture %}{{ item.user.profile_picture.url }}{% else %}https://placehold.co/120x120{% endif %}" alt="Avatar" class="avatar">
-            <div class="user-info">
-                <span class="username">{{ item.user.username }}</span>
-                <p class="last-message">
-                    {% if item.last_message %}
-                        {{ item.last_message.content|truncatechars:30 }}
+            <li class="user-item">
+                <a href="{% url 'private_chat' item.user.id %}" class="user-item-link">
+                    <img src="{% if item.user.profile_picture %}{{ item.user.profile_picture.url }}{% else %}https://placehold.co/120x120{% endif %}" alt="Avatar" class="avatar">
+                    <div class="user-info">
+                        <span class="username">{{ item.user.username }}</span>
+                        <p class="last-message">
+                            {% if item.last_message %}
+                                {{ item.last_message.content|truncatechars:30 }}
+                            {% endif %}
+                        </p>
+                    </div>
+                    <span class="timestamp">
+                        {% if item.last_message %}
+                            {{ item.last_message.timestamp|date:"H:i" }}
+                        {% endif %}
+                    </span>
+
+                    {% if item.unread_count > 0 %}
+                        <span class="unread-count">{{ item.unread_count }}</span>
+                        <span class="unread-status unread"></span>
+                    {% else %}
+                        <span class="unread-status read"></span>
                     {% endif %}
-                </p>
-            </div>
-            <span class="timestamp">
-                {% if item.last_message %}
-                    {{ item.last_message.timestamp|date:"H:i" }}
-                {% endif %}
-            </span>
-            {% if item.last_message.sender != request.user and item.unread_count > 0 %}
-                <span class="unread-count">{{ item.unread_count }}</span>
-            {% endif %}
-            {% if user.unread_count > 0 %}
-                        <span class="unread-status unread"></span> <!-- Une flèche si non lu -->
-                    {% elif user.unread_count == 0 %}
-                        <span class="unread-status read"></span> <!-- Deux flèches si lu -->
-            {% endif %}
-        </a>
-    </li>
-{% endfor %}
+                </a>
+            </li>
+        {% endfor %}
     </ul>
 </div>
 {% endblock %}

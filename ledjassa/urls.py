@@ -3,7 +3,6 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 from djassa import views
-from djassa.views import inbox, conversation
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -50,7 +49,6 @@ path('vente/', views.ventuser, name='vente'),
 
     path('profile/<int:user_id>/', views.profile_view, name='profile'),
     path('messagerie/', views.inbox, name='inbox'),
-    path('messagerie/<int:user_id>/', views.conversation, name='conversation'),
     path('parametres/', views.parametres_view, name='parametres'),
     path('comment/<int:comment_id>/reply/', views.reply_to_comment, name='reply_to_comment'),
     path('ajax/recherche/', views.recherche_ajax, name='recherche_ajax'),
@@ -62,6 +60,7 @@ path('vente/', views.ventuser, name='vente'),
     path('commentaire/<int:publication_id>/', views.page_commentaire, name='page_commentaire'),
 path('api/marquer-vues/', views.marquer_publications_vues, name='marquer_vues'),
 
+path('chat/<int:user_id>/', views.private_chat_view, name='private_chat'),  # URL pour la conversation privée
 
 ]
 

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Messagerie - {{ recipient.username }}</title>
+  <style>
+    /* Votre CSS existant ici */
+    body { margin: 0; font-family: Arial, sans-serif; /* overflow: hidden; */ }
+    .messaging-app { display: flex; margin: auto; width: 100%; max-width: 600px; height: 90vh; background: #fff; border-radius: 12px; overflow: hidden; flex-direction: row; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .inbox-panel { width: 35%; background: #f0f2f5; border-right: 1px solid #ddd; overflow-y: auto; }
+    .user-list { list-style: none; margin: 0; padding: 0; }
+    .user-item { padding: 15px; border-bottom: 1px solid #ddd; display: flex; align-items: center; cursor: pointer; transition: background 0.3s; text-decoration: none; color: inherit; }
+    .user-item:hover { background: #e4e6eb; }
+    .avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; object-fit: cover; }
+    .user-info { flex: 1; }
+    .username { font-weight: bold; display: block; }
+    .last-message { font-size: 13px; color: #666; }
+    .unread-count { background: red; color: white; font-size: 12px; font-weight: bold; border-radius: 50%; padding: 4px 7px; margin-left: 8px; }
+    .chat-panel { flex: 1; display: flex; flex-direction: column; }
+    .chat-header { display: flex; align-items: center; gap: 15px; padding: 15px; background: #f9f9f9; border-bottom: 1px solid #ddd; }
+    .chat-header .avatar { width: 45px; height: 45px; }
+    .chat-header .username { font-weight: bold; font-size: 16px; }
+    .messages { flex: 1; display: flex; flex-direction: column; gap: 5px; padding: 20px; overflow-y: auto; background: #e5ddd5; }
+    .date-separator { text-align: center; margin: 10px 0; font-size: 13px; color: #555; background-color: rgba(210, 210, 210, 0.8); padding: 3px 10px; border-radius: 10px; display: inline-block; margin-left: auto; margin-right: auto; }
+    .message-container { display: flex; width: 100%; } /* Container pour aligner les messages */
+    .message { word-wrap: break-word; word-break: break-word; max-width: 70%; padding: 10px 15px; border-radius: 15px; font-size: 14px; line-height: 1.4; margin-bottom: 10px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+    .sent { background: #dcf8c6; margin-left: auto; border-bottom-right-radius: 5px; }
+    .received { background: #fff; margin-right: auto; border-bottom-left-radius: 5px; }
+    .message p { margin: 0 0 5px 0; }
+    .timestamp { display: block; font-size: 11px; color: #555; margin-top: 5px; text-align: right; }
+    .chat-form { padding: 10px; background: #f0f0f0; border-top: 1px solid #ccc; display: flex; align-items: center; }
+    .chat-form textarea { flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 10px 15px; resize: none; font-size: 14px; outline: none; max-height: 80px; overflow-y: auto; }
+    .chat-form button { background: #007bff; color: white; border: none; padding: 10px 20px; margin-left: 10px; border-radius: 20px; cursor: pointer; transition: background 0.3s; }
+    .chat-form button:hover { background: #0056b3; }
+    .back-button { font-size: 20px; color: #007bff; cursor: pointer; text-decoration: none; margin-right: 10px; }
+    @media (max-width: 900px) { /* ... vos styles responsive ... */ }
+    @media (max-width: 480px) { /* ... vos styles responsive ... */ }
+  </style>
+</head>
+<body>
+  <div class="messaging-app container mt-4">
+    <div class="chat-panel">
+      <div class="chat-header">
+        <a href="{% url 'inbox' %}" id="backButton" class="back-button">&larr;</a>
+        <img src="{% if recipient.profile_picture %}{{ recipient.profile_picture.url }}{% else %}https://via.placeholder.com/45{% endif %}" class="avatar" alt="{{ recipient.username }} avatar"/>
+        <span class="username">{{ recipient.username }}</span>
+      </div>
+
+      <div class="messages" id="messages">
+        {% regroup messages by timestamp.date as date_groups %}
+        {% for group in date_groups %}
+            <div class="date-separator">
+                {% if group.grouper == today %}Aujourd'hui
+                {% elif group.grouper == yesterday %}Hier
+                {% else %}{{ group.grouper|date:"d M Y" }}{% endif %}
+            </div>
+            {% for message in group.list %}
+            <div class="message-container"> <div class="message {% if message.sender.id == current_user_id %}sent{% else %}received{% endif %}">
+                    <p>{{ message.content|linebreaksbr }}</p> {# Utiliser linebreaksbr pour respecter les sauts de ligne #}
+                    <span class="timestamp">{{ message.timestamp|date:"H:i" }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        {% endfor %}
+      </div>
+
+      <form class="chat-form" id="chatForm">
+        {# Pas besoin de {% csrf_token %} pour l'envoi via WebSocket, mais gardez-le si vous avez d'autres POST sur la page #}
+        <textarea name="content" id="messageInput" placeholder="Écrire un message..." rows="1" required></textarea>
+        <button type="submit" id="sendButton">Envoyer</button>
+      </form>
+    </div>
+  </div>
+
+  {# Passer les IDs nécessaires au JavaScript #}
+  {{ recipient.id|json_script:"recipient-id" }}
+  {{ current_user_id|json_script:"current-user-id" }}
+  {{ request.user.username|json_script:"current-username" }} {# Pour info affichage #}
+
+
+  <script>
+    const msgContainer = document.getElementById("messages");
+    const messageInput = document.getElementById("messageInput");
+    const sendButton = document.getElementById("sendButton");
+    const chatForm = document.getElementById("chatForm");
+
+    // Récupérer les IDs depuis les tags script générés par Django
+    const recipientId = JSON.parse(document.getElementById('recipient-id').textContent);
+    const currentUserId = JSON.parse(document.getElementById('current-user-id').textContent);
+    const currentUsername = JSON.parse(document.getElementById('current-username').textContent);
+
+    function scrollToBottom() {
+      // Attendre un court instant pour que le DOM se mette à jour si nécessaire
+      setTimeout(() => {
+         msgContainer.scrollTop = msgContainer.scrollHeight;
+      }, 50);
+    }
+
+    // --- Gestion de l'historique et du bouton retour (votre code existant) ---
+    window.onload = function () {
+        // history.pushState(null, null, window.location.href); // Attention, peut être frustrant pour l'utilisateur
+        scrollToBottom();
+    };
+
+    // window.addEventListener("popstate", function () {
+    //     window.location.href = "{% url 'inbox' %}";
+    // });
+
+    document.getElementById("backButton").addEventListener("click", function (e) {
+        e.preventDefault();
+        window.location.href = "{% url 'inbox' %}";
+    });
+
+    // document.addEventListener("backbutton", function () { // Pour Cordova/PhoneGap etc.
+    //     window.location.href = "{% url 'inbox' %}";
+    // });
+     // --- Fin Gestion historique ---
+
+    // --- Logique WebSocket ---
+    const chatSocketProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const chatSocketURL = `${chatSocketProtocol}://${window.location.host}/ws/chat/${recipientId}/`;
+    console.log("Connexion WebSocket à:", chatSocketURL);
+
+    const chatSocket = new WebSocket(chatSocketURL);
+
+    chatSocket.onopen = function(e) {
+        console.log("Connexion WebSocket ouverte.");
+        // Vous pourriez ajouter un indicateur visuel de connexion ici
+    };
+
+    chatSocket.onclose = function(e) {
+        console.error("Connexion WebSocket fermée de manière inattendue.", e);
+        // Afficher un message à l'utilisateur ou tenter de reconnecter ?
+        addMessageToUI({
+             sender_id: null, // Indicate system message
+             content: "Connexion perdue. Veuillez rafraîchir la page.",
+             timestamp: new Date().toISOString()
+         }, true); // Marquer comme erreur/système
+    };
+
+    chatSocket.onerror = function(e) {
+        console.error("Erreur WebSocket:", e);
+         addMessageToUI({
+             sender_id: null,
+             content: "Erreur de connexion WebSocket.",
+             timestamp: new Date().toISOString()
+         }, true);
+    };
+
+    // Gérer les messages reçus DU SERVEUR
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        console.log("Message reçu du serveur:", data);
+
+        if (data.error) {
+            console.error("Erreur du serveur:", data.error);
+            alert("Erreur serveur: " + data.error); // Ou afficher dans le chat
+        } else if (data.message_id) { // Vérifier si c'est bien un message de chat
+            addMessageToUI(data);
+            scrollToBottom();
+             // Optionnel : Si le message reçu n'est pas de l'utilisateur actuel,
+             // vous pourriez envoyer un événement 'message lu' au serveur ici.
+             // if (data.sender_id !== currentUserId) {
+             //    chatSocket.send(JSON.stringify({'type': 'read_receipt', 'message_id': data.message_id}));
+             // }
+        }
+    };
+
+    // Fonction pour ajouter un message à l'interface
+    function addMessageToUI(data, isSystemMessage = false) {
+        const messageDate = new Date(data.timestamp);
+        const hours = String(messageDate.getHours()).padStart(2, '0');
+        const minutes = String(messageDate.getMinutes()).padStart(2, '0');
+        const timeString = `${hours}:${minutes}`;
+
+        let messageClass = '';
+        let senderUsername = data.sender_username || 'Système'; // Utiliser si disponible
+
+         if (isSystemMessage) {
+             messageClass = 'system-message'; // Définir un style CSS pour .system-message
+         } else if (data.sender_id === currentUserId) {
+             messageClass = 'sent';
+         } else {
+             messageClass = 'received';
+         }
+
+        const messageElement = `
+            <div class="message-container">
+                <div class="message ${messageClass}">
+                    <p>${escapeHTML(data.content)}</p> {# Échapper le HTML pour la sécurité #}
+                    <span class="timestamp">${timeString}</span>
+                </div>
+            </div>
+        `;
+        msgContainer.insertAdjacentHTML("beforeend", messageElement);
+
+        // Logique pour ajouter un séparateur de date si nécessaire (peut devenir complexe ici)
+        // Pour simplifier, on ne l'ajoute que pour les messages chargés initialement.
+    }
+
+    // Fonction pour échapper le HTML (sécurité simple)
+    function escapeHTML(str) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
+    // Gérer l'envoi du formulaire
+    chatForm.addEventListener("submit", function (e) {
+        e.preventDefault(); // Empêche la soumission HTTP classique
+        const message = messageInput.value.trim();
+
+        if (message === "") return; // Ne pas envoyer de message vide
+
+        console.log("Envoi du message via WebSocket:", message);
+
+        // Envoyer le message au serveur via WebSocket
+        if (chatSocket.readyState === WebSocket.OPEN) {
+             chatSocket.send(JSON.stringify({
+                 'message': message
+                 // Le consumer déduira sender et recipient
+             }));
+             messageInput.value = ""; // Vider l'input
+             messageInput.style.height = 'auto'; // Réinitialiser la hauteur
+        } else {
+            console.error("WebSocket n'est pas connecté. Impossible d'envoyer le message.");
+            alert("Connexion perdue. Impossible d'envoyer le message.");
+        }
+
+        // Pas besoin d'ajouter le message immédiatement ici,
+        // car il sera ajouté via chatSocket.onmessage quand le serveur le renverra.
+        // Cela garantit que seuls les messages sauvegardés sont affichés.
+    });
+
+    // Ajuster la hauteur du textarea dynamiquement
+    messageInput.addEventListener('input', function () {
+        this.style.height = 'auto'; // Réinitialise la hauteur
+        this.style.height = (this.scrollHeight) + 'px'; // Ajuste à la hauteur du contenu
+    });
+
+    // Permettre l'envoi avec Entrée (Shift+Entrée pour nouvelle ligne)
+    messageInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault(); // Empêche le saut de ligne dans le textarea
+            sendButton.click(); // Simule le clic sur le bouton Envoyer
+        }
+    });
+
+  </script>
+</body>
+</html>

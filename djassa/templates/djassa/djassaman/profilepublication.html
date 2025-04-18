@@ -24,7 +24,7 @@
             {% else %}
                 <a href="{% url 'subscribe' viewuser.id %}?next={{ request.get_full_path }}" class="btn btn-outline-primary ml-3">S'abonner</a>
             {% endif %}
-            <a href="{% url 'conversation' viewuser.id %}" class="btn btn-primary"><i class="fas fa-comment-dots"></i> Message</a>
+            <a href="{% url 'private_chat' viewuser.id %}" class="btn btn-primary"><i class="fas fa-comment-dots"></i> Message</a>
         </div>
     </div>
 
